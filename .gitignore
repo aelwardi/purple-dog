@@ -1,0 +1,86 @@
+# .gitignore global pour le workspace `hackathon`
+# Couvre macOS, IDEs, outils courants, langages et fichiers temporaires
+
+# === OS ===
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# === Editors / IDEs ===
+# IntelliJ / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Editor temporary files
+*~
+*.swp
+.*.swp
+*.tmp
+*.temp
+
+# === Node / frontend ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.lck
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+env/
+
+# === Java / JVM ===
+# Maven
+**/target/
+
+# Gradle
+.gradle/
+build/
+
+# Compiled files
+*.class
+*.jar
+*.war
+*.ear
+
+# === Build / artifacts ===
+coverage/
+*.lcov
+
+# === Logs ===
+*.log
+logs/
+
+# === Secrets / keys ===
+.env
+*.jks
+*.keystore
+secrets/
+*.secret
+
+# === Docker ===
+docker-compose.override.yml
+
+# === Misc ===
+# Ignore IDE run configs and local settings but keep project-level files under version control
+.local-repo/
+
+# Keep mvnw wrappers — ne pas les ignorer (on veut généralement les committer)
+
+# End of file
