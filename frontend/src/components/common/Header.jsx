@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Logo from './Logo';
 import Button from './Button';
+import RegisterTypeModal from '../auth/RegisterTypeModal';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -51,11 +53,13 @@ const Header = () => {
                 Se connecter
               </Button>
             </Link>
-            <Link to="/register">
-              <Button variant="primary" size="small">
-                S'inscrire
-              </Button>
-            </Link>
+            <Button 
+              variant="primary" 
+              size="small"
+              onClick={() => setRegisterModalOpen(true)}
+            >
+              S'inscrire
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -111,16 +115,28 @@ const Header = () => {
                     Se connecter
                   </Button>
                 </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="primary" size="small" className="w-full">
-                    S'inscrire
-                  </Button>
-                </Link>
+                <Button 
+                  variant="primary" 
+                  size="small" 
+                  className="w-full"
+                  onClick={() => {
+                    setRegisterModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  S'inscrire
+                </Button>
               </div>
             </div>
           </div>
         )}
       </nav>
+      
+      {/* Register Type Modal */}
+      <RegisterTypeModal 
+        isOpen={registerModalOpen} 
+        onClose={() => setRegisterModalOpen(false)} 
+      />
     </header>
   );
 };
