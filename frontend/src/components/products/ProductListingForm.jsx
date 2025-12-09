@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PhotoIcon, DocumentIcon, CurrencyEuroIcon, ScaleIcon, RulerIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, DocumentIcon, CurrencyEuroIcon, ScaleIcon } from '@heroicons/react/24/outline';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Card from '../common/Card';
@@ -169,7 +169,7 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
               value={formData.width}
               onChange={handleChange}
               placeholder="0.0"
-              icon={<RulerIcon className="h-5 w-5 text-gray-400" />}
+              icon={<ScaleIcon className="h-5 w-5 text-gray-400" />}
             />
             <Input
               label="Hauteur (cm)"
@@ -179,7 +179,7 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
               value={formData.height}
               onChange={handleChange}
               placeholder="0.0"
-              icon={<RulerIcon className="h-5 w-5 text-gray-400" />}
+              icon={<ScaleIcon className="h-5 w-5 text-gray-400" />}
             />
             <Input
               label="Profondeur (cm)"
@@ -189,7 +189,7 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
               value={formData.depth}
               onChange={handleChange}
               placeholder="0.0"
-              icon={<RulerIcon className="h-5 w-5 text-gray-400" />}
+              icon={<ScaleIcon className="h-5 w-5 text-gray-400" />}
             />
             <Input
               label="Poids (kg)"
