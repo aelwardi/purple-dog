@@ -1,60 +1,26 @@
-version: "3.8"
-
 services:
-  backend:
-    build:
-      context: ./mvp
-    container_name: purple-dog-backend
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/purple_dog
-      SPRING_DATASOURCE_USERNAME: purple_dog_user
-      SPRING_DATASOURCE_PASSWORD: purple_dog_password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - purple-dog-network
-
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   container_name: purple-dog-frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     REACT_APP_API_URL: http://localhost:8080
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - purple-dog-network
-
   postgres:
     image: postgres:16-alpine
     container_name: purple-dog-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: purple_dog
-      POSTGRES_USER: purple_dog_user
-      POSTGRES_PASSWORD: purple_dog_password
+      POSTGRES_DB: ${POSTGRES_DB:-purple_dog_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - purple-dog-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U purple_dog_user -d purple_dog"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-purple_dog_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - purple-dog-network
+
+  # Backend runs locally in development mode
+  # Start with: cd mvp && ./mvnw spring-boot:run
 
 networks:
   purple-dog-network:

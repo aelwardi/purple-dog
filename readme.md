@@ -46,7 +46,7 @@ hackathon/
 **Option 2: From Terminal**
 ```bash
 cd /Users/elwardi/Desktop/hackathon
-./start.sh
+
 ```
 
 **Option 3: Maven Command**

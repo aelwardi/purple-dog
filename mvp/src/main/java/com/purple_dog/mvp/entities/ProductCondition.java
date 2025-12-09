@@ -1,11 +1,11 @@
 package com.purple_dog.mvp.entities;
 
 public enum ProductCondition {
-    NEUF,
+    NEW,
+    LIKE_NEW,
     EXCELLENT,
-    TRES_BON,
-    BON,
-    ACCEPTABLE,
-    RESTAURE
+    GOOD,
+    FAIR,
+    POOR,
+    RESTORED
 }
-
