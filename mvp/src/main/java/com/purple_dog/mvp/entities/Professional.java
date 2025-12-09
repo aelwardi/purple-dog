@@ -36,18 +36,13 @@ public class Professional extends Person {
 
     private String certificationUrl;
 
+    private String specialty;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
     private Plan plan;
 
     // Relations
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-        name = "professional_specialties",
-        joinColumns = @JoinColumn(name = "professional_id"),
-        inverseJoinColumns = @JoinColumn(name = "specialty_id")
-    )
-    private List<Specialty> specialties = new ArrayList<>();
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
