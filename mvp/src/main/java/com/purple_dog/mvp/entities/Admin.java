@@ -26,5 +26,8 @@ public class Admin extends Person {
     // Relations
     @OneToMany(mappedBy = "assignedAdmin", cascade = CascadeType.ALL)
     private List<SupportTicket> assignedTickets = new ArrayList<>();
+
+    @OneToMany(mappedBy = "verifiedBy")
+    private List<Document> verifiedDocuments = new ArrayList<>();
 }
 

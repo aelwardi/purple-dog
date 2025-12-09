@@ -1,0 +1,2 @@
+##  HTTP Request to fetch admin data over HTTPS
+GET localhost:8080/api/admins
