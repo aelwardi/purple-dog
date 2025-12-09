@@ -82,6 +82,9 @@ public abstract class Person {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<SupportTicket> supportTickets = new ArrayList<>();
 
+    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Document> documents = new ArrayList<>();
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
