@@ -25,4 +25,3 @@ public class AddressResponseDTO {
 
     private String fullAddress;
 }
-

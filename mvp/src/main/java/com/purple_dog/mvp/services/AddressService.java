@@ -35,25 +35,20 @@ public class AddressService {
     public AddressResponseDTO createAddress(Long personId, AddressCreateDTO dto) {
         log.info("Creating address for person: {}", personId);
 
-        // Vérifier que la personne existe
         Person person = personRepository.findById(personId)
                 .orElseThrow(() -> new ResourceNotFoundException("Person not found with id: " + personId));
 
-        // Vérifier le nombre maximum d'adresses
         long addressCount = addressRepository.countByPersonId(personId);
         if (addressCount >= MAX_ADDRESSES_PER_USER) {
             throw new InvalidOperationException("Maximum number of addresses (" + MAX_ADDRESSES_PER_USER + ") reached");
         }
 
-        // Si c'est la première adresse ou si isDefault est true, la définir comme défaut
         boolean shouldBeDefault = addressCount == 0 || (dto.getIsDefault() != null && dto.getIsDefault());
 
         if (shouldBeDefault) {
-            // Retirer le flag default des autres adresses
             addressRepository.resetDefaultForPerson(personId);
         }
 
-        // Créer l'adresse
         Address address = Address.builder()
                 .person(person)
                 .label(dto.getLabel())
@@ -124,7 +119,6 @@ public class AddressService {
         Address address = addressRepository.findByIdAndPersonId(addressId, personId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
-        // Mettre à jour les champs si fournis
         if (dto.getLabel() != null) {
             address.setLabel(dto.getLabel());
         }
@@ -144,9 +138,7 @@ public class AddressService {
             address.setCountry(dto.getCountry());
         }
 
-        // Gérer le changement de l'adresse par défaut
         if (dto.getIsDefault() != null && dto.getIsDefault() && !address.getIsDefault()) {
-            // Retirer le flag default des autres adresses
             addressRepository.resetDefaultForPerson(personId);
             address.setIsDefault(true);
         }
@@ -167,7 +159,6 @@ public class AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
         if (!address.getIsDefault()) {
-            // Retirer le flag default des autres adresses
             addressRepository.resetDefaultForPerson(personId);
 
             address.setIsDefault(true);
@@ -190,7 +181,6 @@ public class AddressService {
         boolean wasDefault = address.getIsDefault();
         addressRepository.delete(address);
 
-        // Si c'était l'adresse par défaut, définir une autre adresse comme défaut
         if (wasDefault) {
             List<Address> remainingAddresses = addressRepository.findByPersonIdOrderByIsDefaultDescCreatedAtDesc(personId);
             if (!remainingAddresses.isEmpty()) {
@@ -217,8 +207,6 @@ public class AddressService {
     public boolean hasAddresses(Long personId) {
         return addressRepository.countByPersonId(personId) > 0;
     }
-
-    // Méthode privée de mapping
 
     private AddressResponseDTO mapToResponseDTO(Address address) {
         String fullAddress = buildFullAddress(address);
