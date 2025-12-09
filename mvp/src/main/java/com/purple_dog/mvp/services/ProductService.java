@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,12 +68,12 @@ public class ProductService {
 
         // Documents
         if (request.getDocuments() != null) {
-            for (DocumentUploadRequest docReq : request.getDocuments()) {
+            for (DocumentUploadDTO docReq : request.getDocuments()) {
                 Document doc = new Document();
                 doc.setProduct(product);
                 doc.setFileName(docReq.getFileName());
                 doc.setFileUrl(docReq.getFileUrl());
-                doc.setFileType(docReq.getFileType());
+                doc.setDocumentType(docReq.getDocumentType());
                 doc.setDescription(docReq.getDescription());
                 product.getDocuments().add(doc);
             }
@@ -215,9 +216,38 @@ public class ProductService {
                 .map(p -> new PhotoResponse(p.getId(), p.getUrl(), p.getDisplayOrder(), p.getIsPrimary()))
                 .collect(Collectors.toList());
 
-        List<DocumentResponse> docs = product.getDocuments().stream()
-                .map(d -> new DocumentResponse(d.getId(), d.getFileName(), d.getFileUrl(), d.getFileType(),
-                        d.getDescription()))
+        // private Long id;
+        // private Long personId;
+        // private DocumentType documentType;
+        // private String fileName;
+        // private String fileUrl;
+        // private String fileType;
+        // private Long fileSize;
+        // private String description;
+        // private DocumentStatus status;
+        // private String rejectionReason;
+        // private LocalDateTime verifiedAt;
+        // private Long verifiedById;
+        // private String verifiedByName;
+        // private LocalDateTime uploadedAt;
+        List<DocumentResponseDTO> docs = product.getDocuments().stream()
+                .map(d -> new DocumentResponseDTO(
+                        d.getId(),
+                        d.getProduct().getSeller().getId(),
+                        d.getDocumentType(),
+                        d.getFileName(),
+                        d.getFileUrl(),
+                        d.getFileType(),
+                        d.getFileSize(),
+                        d.getDescription(),
+                        d.getStatus(),
+                        d.getRejectionReason(),
+                        d.getVerifiedAt(),
+                        d.getVerifiedBy() != null ? d.getVerifiedBy().getId() : null,
+                        d.getVerifiedBy() != null
+                                ? d.getVerifiedBy().getFirstName() + " " + d.getVerifiedBy().getLastName()
+                                : null,
+                        d.getUploadedAt()))
                 .collect(Collectors.toList());
 
         return new ProductResponse(

@@ -30,5 +30,5 @@ public class ProductCreateRequest {
     private BigDecimal depthCm;
     private BigDecimal weightKg;
     private List<String> photoUrls;
-    private List<DocumentUploadRequest> documents;
+    private List<DocumentUploadDTO> documents;
 }

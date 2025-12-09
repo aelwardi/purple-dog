@@ -36,5 +36,5 @@ public class ProductResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<PhotoResponse> photos;
-    private List<DocumentResponse> documents;
+    private List<DocumentResponseDTO> documents;
 }
