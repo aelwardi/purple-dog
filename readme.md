@@ -2,7 +2,1187 @@
 
 ## Documentation de la Base de Données
 
-Cette documentation complète contient :
+Cette documentation complète contient la structure de la base de données, les relations entre les entités et le script SQL pour la création de la base.
+
+---
+
+## Script SQL de Création de la Base de Données
+
+```sql
+-- =====================================================
+-- PURPLE DOG
+-- =====================================================
+
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =====================================================
+-- ENUMS
+-- =====================================================
+
+CREATE TYPE user_role AS ENUM ('INDIVIDUAL', 'PROFESSIONAL', 'ADMIN');
+CREATE TYPE account_status AS ENUM ('ACTIVE', 'SUSPENDED', 'BANNED', 'PENDING_VERIFICATION');
+CREATE TYPE product_status AS ENUM ('DRAFT', 'PENDING_VALIDATION', 'ACTIVE', 'SOLD', 'EXPIRED', 'REJECTED', 'ARCHIVED');
+CREATE TYPE product_condition AS ENUM ('NEW', 'EXCELLENT', 'VERY_GOOD', 'GOOD', 'ACCEPTABLE', 'RESTORED');
+CREATE TYPE sale_type AS ENUM ('AUCTION', 'QUICK_SALE');
+CREATE TYPE bid_status AS ENUM ('ACTIVE', 'OUTBID', 'WINNING', 'WON', 'LOST');
+CREATE TYPE offer_status AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED');
+CREATE TYPE order_status AS ENUM ('PENDING_PAYMENT', 'PAID', 'PREPARING', 'SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'DISPUTED');
+CREATE TYPE payment_status AS ENUM ('PENDING', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'REFUNDED', 'CANCELLED');
+CREATE TYPE payment_method AS ENUM ('CARD', 'BANK_TRANSFER', 'WALLET');
+CREATE TYPE delivery_status AS ENUM ('PENDING', 'LABEL_GENERATED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED', 'RETURNED');
+CREATE TYPE notification_type AS ENUM ('BID_PLACED', 'BID_OUTBID', 'AUCTION_WON', 'AUCTION_LOST', 'OFFER_RECEIVED', 'OFFER_ACCEPTED', 'OFFER_REJECTED', 'PRODUCT_SOLD', 'PAYMENT_RECEIVED', 'ORDER_SHIPPED', 'ORDER_DELIVERED', 'MESSAGE_RECEIVED', 'FAVORITE_UPDATED', 'ALERT_TRIGGERED', 'SYSTEM_NOTIFICATION');
+CREATE TYPE ticket_status AS ENUM ('OPEN', 'IN_PROGRESS', 'WAITING_FOR_USER', 'RESOLVED', 'CLOSED');
+CREATE TYPE ticket_priority AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+CREATE TYPE plan_type AS ENUM ('FREE', 'BASIC', 'PREMIUM', 'ENTERPRISE');
+
+-- =====================================================
+-- TABLE: PERSONS (Parent abstrait avec héritage JOINED)
+-- =====================================================
+
+CREATE TABLE persons (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) UNIQUE,
+    role user_role NOT NULL,
+    account_status account_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    profile_picture VARCHAR(500),
+    bio TEXT,
+    email_verified BOOLEAN DEFAULT FALSE,
+    phone_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: INDIVIDUALS (inherits from Person)
+-- =====================================================
+
+CREATE TABLE individuals (
+    id BIGINT PRIMARY KEY REFERENCES persons(id) ON DELETE CASCADE,
+    identity_verified BOOLEAN DEFAULT FALSE,
+    identity_document_url VARCHAR(500),
+    max_sales_per_month INTEGER DEFAULT 10
+);
+
+-- =====================================================
+-- TABLE: PLANS
+-- =====================================================
+
+CREATE TABLE plans (
+    id BIGSERIAL PRIMARY KEY,
+    type plan_type NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    monthly_price DECIMAL(10,2) NOT NULL,
+    annual_price DECIMAL(10,2) NOT NULL,
+    max_listings INTEGER,
+    max_photos_per_listing INTEGER,
+    featured_listings BOOLEAN DEFAULT FALSE,
+    priority_support BOOLEAN DEFAULT FALSE,
+    analytics_access BOOLEAN DEFAULT FALSE,
+    custom_branding BOOLEAN DEFAULT FALSE,
+    commission_rate DECIMAL(5,2) NOT NULL,
+    active BOOLEAN DEFAULT TRUE
+);
+
+-- =====================================================
+-- TABLE: PROFESSIONALS (inherits from Person)
+-- =====================================================
+
+CREATE TABLE professionals (
+    id BIGINT PRIMARY KEY REFERENCES persons(id) ON DELETE CASCADE,
+    company_name VARCHAR(255) NOT NULL,
+    siret VARCHAR(50) UNIQUE,
+    tva_number VARCHAR(50) UNIQUE,
+    website VARCHAR(255),
+    company_description TEXT,
+    certified BOOLEAN DEFAULT FALSE,
+    certification_url VARCHAR(500),
+    plan_id BIGINT REFERENCES plans(id) ON DELETE SET NULL
+);
+
+-- =====================================================
+-- TABLE: ADMINS (hérite de Person)
+-- =====================================================
+
+CREATE TABLE admins (
+    id BIGINT PRIMARY KEY REFERENCES persons(id) ON DELETE CASCADE,
+    super_admin BOOLEAN DEFAULT FALSE,
+    permissions TEXT
+);
+
+-- =====================================================
+-- TABLE: ADDRESSES
+-- =====================================================
+
+CREATE TABLE addresses (
+    id BIGSERIAL PRIMARY KEY,
+    person_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    label VARCHAR(100) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    complement VARCHAR(255),
+    city VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'France',
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: SPECIALTIES
+-- =====================================================
+
+CREATE TABLE specialties (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT
+);
+
+-- =====================================================
+-- TABLE: PROFESSIONAL_SPECIALTIES (Many-to-Many)
+-- =====================================================
+
+CREATE TABLE professional_specialties (
+    professional_id BIGINT REFERENCES professionals(id) ON DELETE CASCADE,
+    specialty_id BIGINT REFERENCES specialties(id) ON DELETE CASCADE,
+    PRIMARY KEY (professional_id, specialty_id)
+);
+
+-- =====================================================
+-- TABLE: CATEGORIES
+-- =====================================================
+
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    icon_url VARCHAR(500),
+    active BOOLEAN DEFAULT TRUE
+);
+
+-- =====================================================
+-- TABLE: PROFESSIONAL_INTERESTS (Many-to-Many)
+-- =====================================================
+
+CREATE TABLE professional_interests (
+    professional_id BIGINT REFERENCES professionals(id) ON DELETE CASCADE,
+    category_id BIGINT REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (professional_id, category_id)
+);
+
+-- =====================================================
+-- TABLE: PRODUCTS
+-- =====================================================
+
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    seller_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    product_condition product_condition NOT NULL,
+    status product_status NOT NULL DEFAULT 'DRAFT',
+    sale_type sale_type NOT NULL,
+    estimated_value DECIMAL(10,2),
+    brand VARCHAR(255),
+    year_of_manufacture INTEGER,
+    origin VARCHAR(255),
+    authenticity_certificate TEXT,
+    has_documentation BOOLEAN DEFAULT FALSE,
+    view_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    validated_at TIMESTAMP,
+    validated_by_admin_id BIGINT REFERENCES admins(id) ON DELETE SET NULL
+);
+
+-- =====================================================
+-- TABLE: PHOTOS
+-- =====================================================
+
+CREATE TABLE photos (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    url VARCHAR(500) NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    is_primary BOOLEAN DEFAULT FALSE,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: DOCUMENTS
+-- =====================================================
+
+CREATE TABLE documents (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    description TEXT,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: AUCTIONS (One-to-One with Product)
+-- =====================================================
+
+CREATE TABLE auctions (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
+    starting_price DECIMAL(10,2) NOT NULL,
+    reserve_price DECIMAL(10,2),
+    current_price DECIMAL(10,2) NOT NULL,
+    bid_increment DECIMAL(10,2) NOT NULL DEFAULT 10.00,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    reserve_price_met BOOLEAN DEFAULT FALSE,
+    current_winner_id BIGINT REFERENCES persons(id) ON DELETE SET NULL,
+    total_bids INTEGER DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: BIDS
+-- =====================================================
+
+CREATE TABLE bids (
+    id BIGSERIAL PRIMARY KEY,
+    auction_id BIGINT NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+    bidder_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    amount DECIMAL(10,2) NOT NULL,
+    status bid_status NOT NULL DEFAULT 'ACTIVE',
+    is_auto_bid BOOLEAN DEFAULT FALSE,
+    max_auto_bid_amount DECIMAL(10,2),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: QUICK_SALES (One-to-One with Product)
+-- =====================================================
+
+CREATE TABLE quick_sales (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
+    fixed_price DECIMAL(10,2) NOT NULL,
+    accept_offers BOOLEAN DEFAULT TRUE,
+    minimum_offer_price DECIMAL(10,2),
+    is_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    sold_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: OFFERS
+-- =====================================================
+
+CREATE TABLE offers (
+    id BIGSERIAL PRIMARY KEY,
+    quick_sale_id BIGINT NOT NULL REFERENCES quick_sales(id) ON DELETE CASCADE,
+    buyer_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    amount DECIMAL(10,2) NOT NULL,
+    message TEXT,
+    status offer_status NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    responded_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: FAVORITES
+-- =====================================================
+
+CREATE TABLE favorites (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, product_id)
+);
+
+-- =====================================================
+-- TABLE: TRANSPORTEURS
+-- =====================================================
+
+CREATE TABLE transporteurs (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    code VARCHAR(50) NOT NULL,
+    logo VARCHAR(500),
+    api_endpoint VARCHAR(500),
+    tracking_url_pattern VARCHAR(500),
+    base_price DECIMAL(10,2) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    description TEXT
+);
+
+-- =====================================================
+-- TABLE: ORDERS
+-- =====================================================
+
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    order_number VARCHAR(100) NOT NULL UNIQUE,
+    buyer_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE RESTRICT,
+    seller_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE RESTRICT,
+    auction_id BIGINT UNIQUE REFERENCES auctions(id) ON DELETE SET NULL,
+    quick_sale_id BIGINT UNIQUE REFERENCES quick_sales(id) ON DELETE SET NULL,
+    product_price DECIMAL(10,2) NOT NULL,
+    shipping_cost DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    platform_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status order_status NOT NULL DEFAULT 'PENDING_PAYMENT',
+    shipping_address_id BIGINT NOT NULL REFERENCES addresses(id) ON DELETE RESTRICT,
+    billing_address_id BIGINT NOT NULL REFERENCES addresses(id) ON DELETE RESTRICT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: PAYMENTS
+-- =====================================================
+
+CREATE TABLE payments (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+    payment_intent_id VARCHAR(255) NOT NULL UNIQUE,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    payment_method payment_method NOT NULL,
+    status payment_status NOT NULL DEFAULT 'PENDING',
+    stripe_charge_id VARCHAR(255),
+    stripe_customer_id VARCHAR(255),
+    error_message TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP,
+    refunded_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: DELIVERIES
+-- =====================================================
+
+CREATE TABLE deliveries (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+    carrier_id BIGINT NOT NULL REFERENCES carriers(id) ON DELETE RESTRICT,
+    tracking_number VARCHAR(255) UNIQUE,
+    status delivery_status NOT NULL DEFAULT 'PENDING',
+    label_url VARCHAR(500),
+    estimated_delivery_date TIMESTAMP,
+    shipped_at TIMESTAMP,
+    delivered_at TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: INVOICES
+-- =====================================================
+
+CREATE TABLE invoices (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+    invoice_number VARCHAR(100) NOT NULL UNIQUE,
+    pdf_url VARCHAR(500) NOT NULL,
+    issued_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: FEATURES
+-- =====================================================
+
+CREATE TABLE features (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    code VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    icon VARCHAR(255),
+    active BOOLEAN DEFAULT TRUE
+);
+
+-- =====================================================
+-- TABLE: PLAN_FEATURES (Many-to-Many)
+-- =====================================================
+
+CREATE TABLE plan_features (
+    plan_id BIGINT REFERENCES plans(id) ON DELETE CASCADE,
+    feature_id BIGINT REFERENCES features(id) ON DELETE CASCADE,
+    PRIMARY KEY (plan_id, feature_id)
+);
+
+-- =====================================================
+-- TABLE: CONVERSATIONS
+-- =====================================================
+
+CREATE TABLE conversations (
+    id BIGSERIAL PRIMARY KEY,
+    user1_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    user2_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    order_id BIGINT UNIQUE REFERENCES orders(id) ON DELETE SET NULL,
+    user1_archived BOOLEAN DEFAULT FALSE,
+    user2_archived BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_message_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: MESSAGES
+-- =====================================================
+
+CREATE TABLE messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: SUPPORT_TICKETS
+-- =====================================================
+
+CREATE TABLE support_tickets (
+    id BIGSERIAL PRIMARY KEY,
+    ticket_number VARCHAR(100) NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    assigned_admin_id BIGINT REFERENCES admins(id) ON DELETE SET NULL,
+    subject VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    status ticket_status NOT NULL DEFAULT 'OPEN',
+    priority ticket_priority NOT NULL DEFAULT 'MEDIUM',
+    category VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMP,
+    closed_at TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: TICKET_MESSAGES
+-- =====================================================
+
+CREATE TABLE ticket_messages (
+    id BIGSERIAL PRIMARY KEY,
+    support_ticket_id BIGINT NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_staff_reply BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: NOTIFICATIONS
+-- =====================================================
+
+CREATE TABLE notifications (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    type notification_type NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    link_url VARCHAR(500),
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP,
+    email_sent BOOLEAN DEFAULT FALSE,
+    email_sent_at TIMESTAMP,
+    metadata TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- TABLE: ALERTS
+-- =====================================================
+
+CREATE TABLE alerts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    keywords VARCHAR(500),
+    min_price DECIMAL(10,2),
+    max_price DECIMAL(10,2),
+    condition product_condition,
+    active BOOLEAN DEFAULT TRUE,
+    email_notification BOOLEAN DEFAULT TRUE,
+    in_app_notification BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_triggered_at TIMESTAMP
+);
+
+-- =====================================================
+-- INDEXES pour Performance
+-- =====================================================
+
+-- Indexes sur Person
+CREATE INDEX idx_persons_email ON persons(email);
+CREATE INDEX idx_persons_role ON persons(role);
+CREATE INDEX idx_persons_status ON persons(account_status);
+
+-- Indexes sur Products
+CREATE INDEX idx_products_seller ON products(seller_id);
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_products_sale_type ON products(sale_type);
+CREATE INDEX idx_products_created_at ON products(created_at DESC);
+
+-- Indexes on Auctions
+CREATE INDEX idx_auctions_product ON auctions(product_id);
+CREATE INDEX idx_auctions_end_date ON auctions(end_date);
+CREATE INDEX idx_auctions_is_active ON auctions(is_active);
+
+-- Indexes on Bids
+CREATE INDEX idx_bids_auction ON bids(auction_id);
+CREATE INDEX idx_bids_bidder ON bids(bidder_id);
+CREATE INDEX idx_bids_created_at ON bids(created_at DESC);
+
+-- Indexes on QuickSales
+CREATE INDEX idx_quick_sales_product ON quick_sales(product_id);
+CREATE INDEX idx_quick_sales_available ON quick_sales(is_available);
+
+-- Indexes sur Orders
+CREATE INDEX idx_orders_buyer ON orders(buyer_id);
+CREATE INDEX idx_orders_seller ON orders(seller_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_created_at ON orders(created_at DESC);
+
+-- Indexes sur Notifications
+CREATE INDEX idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+
+-- Indexes sur Messages
+CREATE INDEX idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX idx_messages_sender ON messages(sender_id);
+
+-- =====================================================
+-- TRIGGERS
+-- =====================================================
+
+-- Trigger pour mettre à jour updated_at automatiquement
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_persons_updated_at BEFORE UPDATE ON persons 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_livraisons_updated_at BEFORE UPDATE ON livraisons 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_support_tickets_updated_at BEFORE UPDATE ON support_tickets 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- FIN DU SCRIPT
+-- =====================================================
+```
+
+---
+
+## Description Détaillée des Entités et Relations
+
+### 📦 **1. PERSON (Entité Parent Abstraite)**
+**Table**: `persons` (avec héritage JOINED)
+
+**Description**: Classe abstraite qui représente tous les utilisateurs de la plateforme. Utilise l'héritage JPA avec stratégie JOINED pour les 3 types d'utilisateurs.
+
+**Attributs principaux**:
+- `id`: Identifiant unique
+- `email`: Email unique (authentification)
+- `password`: Mot de passe hashé
+- `firstName`, `lastName`: Nom et prénom
+- `phone`: Numéro de téléphone unique
+- `role`: Rôle de l'utilisateur (PARTICULIER, PROFESSIONAL, ADMIN)
+- `accountStatus`: Statut du compte (ACTIVE, SUSPENDED, BANNED, PENDING_VERIFICATION)
+- `profilePicture`: URL de la photo de profil
+- `bio`: Biographie de l'utilisateur
+- `emailVerified`, `phoneVerified`: Indicateurs de vérification
+- `createdAt`, `updatedAt`, `lastLoginAt`: Timestamps
+
+**Relations sortantes**:
+- `addresses`: OneToMany → Address (1:N)
+- `products`: OneToMany → Product (1:N - en tant que vendeur)
+- `favorites`: OneToMany → Favorite (1:N)
+- `notifications`: OneToMany → Notification (1:N)
+- `alerts`: OneToMany → Alert (1:N)
+- `orders`: OneToMany → Order (1:N - en tant qu'acheteur)
+- `supportTickets`: OneToMany → SupportTicket (1:N)
+
+---
+
+### **2. PARTICULIER**
+**Table**: `particuliers` (hérite de persons)
+
+**Description**: Utilisateur particulier qui peut UNIQUEMENT vendre des objets. Inscription gratuite avec limitations.
+
+**Attributs spécifiques**:
+- `identityVerified`: Vérification d'identité (KYC)
+- `identityDocumentUrl`: URL du document d'identité
+- `maxSalesPerMonth`: Limite de ventes mensuelles (défaut: 10)
+
+**Restrictions**:
+- Ne peut PAS acheter
+- Peut vendre en mode enchères ou vente rapide
+- Accès gratuit et illimité
+
+---
+
+### **3. PROFESSIONAL**
+**Table**: `professionals` (hérite de persons)
+
+**Description**: Professionnel avec abonnement payant (49€/mois, 1 mois gratuit). Peut acheter ET vendre.
+
+**Attributs spécifiques**:
+- `companyName`: Nom de l'entreprise
+- `siret`: Numéro SIRET unique
+- `tvaNumber`: Numéro de TVA intracommunautaire
+- `website`: Site web de l'entreprise
+- `companyDescription`: Description de l'entreprise
+- `certified`: Certification professionnelle
+- `certificationUrl`: URL du certificat
+- `forfait`: ManyToOne → Forfait
+
+**Relations**:
+- `specialties`: ManyToMany → Specialty (spécialités du professionnel)
+- `interests`: ManyToMany → Category (centres d'intérêt pour alertes)
+
+**Fonctionnalités**:
+- Acheter des objets
+- Vendre des objets
+- Participer aux enchères
+- Faire des offres sur ventes rapides
+- Recherche avancée avec filtres
+- Système de favoris
+- Notifications personnalisées
+
+---
+
+### **4. ADMIN**
+**Table**: `admins` (hérite de persons)
+
+**Description**: Administrateur de la plateforme avec accès aux fonctionnalités de gestion.
+
+**Attributs spécifiques**:
+- `superAdmin`: Super-administrateur avec tous les droits
+- `permissions`: Liste JSON des permissions spécifiques
+
+**Relations**:
+- `assignedTickets`: OneToMany → SupportTicket (tickets assignés)
+
+**Responsabilités**:
+- Modération des produits
+- Gestion des utilisateurs
+- Configuration des commissions
+- Gestion du support
+- Statistiques et analytics
+
+---
+
+### **5. ADDRESS**
+**Table**: `addresses`
+
+**Description**: Adresses postales des utilisateurs (livraison, facturation).
+
+**Attributs**:
+- `person`: ManyToOne → Person
+- `label`: Libellé ("Domicile", "Bureau", etc.)
+- `street`, `complement`, `city`, `postalCode`, `country`: Adresse complète
+- `isDefault`: Adresse par défaut
+
+**Relations**:
+- Utilisée par Order pour `shippingAddress` et `billingAddress`
+
+---
+
+### **6. SPECIALTY**
+**Table**: `specialties`
+
+**Description**: Spécialités des professionnels (ex: "Horlogerie", "Bijouterie", "Antiquités").
+
+**Relations**:
+- `professionals`: ManyToMany → Professional
+
+---
+
+### **7. CATEGORY**
+**Table**: `categories`
+
+**Description**: 13 catégories d'objets de valeur.
+
+**Exemples de catégories**:
+1. Montres de luxe
+2. Bijoux et pierres précieuses
+3. Œuvres d'art
+4. Vins et spiritueux
+5. Antiquités et objets de collection
+6. Voitures de collection
+7. Sacs et accessoires de luxe
+8. Instruments de musique rares
+9. Livres anciens et manuscrits
+10. Mobilier de designers
+11. Pièces et lingots d'or
+12. Objets militaires et historiques
+13. Timbres et philatélie
+
+**Relations**:
+- `products`: OneToMany → Product (1:N)
+- `interestedProfessionals`: ManyToMany → Professional (centres d'intérêt)
+- `alerts`: OneToMany → Alert (1:N)
+
+---
+
+### **8. PRODUCT**
+**Table**: `products`
+
+**Description**: Produit mis en vente (enchères ou vente rapide).
+
+**Attributs principaux**:
+- `seller`: ManyToOne → Person (vendeur)
+- `category`: ManyToOne → Category
+- `title`: Titre du produit
+- `description`: Description détaillée
+- `productCondition`: État (NEUF, EXCELLENT, TRES_BON, BON, ACCEPTABLE, RESTAURE)
+- `status`: Statut (DRAFT, PENDING_VALIDATION, ACTIVE, SOLD, EXPIRED, REJECTED, ARCHIVED)
+- `saleType`: Type de vente (ENCHERES, VENTE_RAPIDE)
+- `estimatedValue`: Valeur estimée
+- `brand`, `yearOfManufacture`, `origin`: Informations du produit
+- `authenticityCertificate`: Certificat d'authenticité
+- `hasDocumentation`: Présence de documentation
+- `viewCount`: Nombre de vues
+- `validatedBy`: ManyToOne → Admin (admin ayant validé)
+
+**Relations**:
+- `photos`: OneToMany → Photo (1:N, minimum 10)
+- `documents`: OneToMany → Document (1:N)
+- `encheres`: OneToOne → Encheres (si type=ENCHERES)
+- `venteRapide`: OneToOne → VenteRapide (si type=VENTE_RAPIDE)
+- `favorites`: OneToMany → Favorite (1:N)
+
+**Règles métier**:
+- Minimum **10 photos** obligatoires
+- Validation par admin avant publication
+- Un produit = soit enchères SOIT vente rapide
+
+---
+
+### **9. PHOTO**
+**Table**: `photos`
+
+**Description**: Photos d'un produit (minimum 10).
+
+**Attributs**:
+- `product`: ManyToOne → Product
+- `url`: URL de l'image
+- `displayOrder`: Ordre d'affichage
+- `isPrimary`: Photo principale
+
+---
+
+### **10. DOCUMENT**
+**Table**: `documents`
+
+**Description**: Documents associés à un produit (certificats, factures, expertises).
+
+**Attributs**:
+- `product`: ManyToOne → Product
+- `fileName`, `fileUrl`, `fileType`: Informations du fichier
+- `description`: Description du document
+
+---
+
+### ⚡ **11. ENCHERES (Auction)**
+**Table**: `encheres`
+
+**Description**: Système d'enchères pour un produit (durée: 7 jours).
+
+**Attributs principaux**:
+- `product`: OneToOne → Product
+- `startingPrice`: Prix de départ (-10% du prix souhaité par défaut)
+- `reservePrice`: Prix de réserve (minimum accepté par le vendeur)
+- `currentPrice`: Prix actuel de l'enchère
+- `bidIncrement`: Palier d'enchère (défaut: 10€)
+- `startDate`, `endDate`: Dates de début et fin
+- `isActive`: Enchère active
+- `reservePriceMet`: Prix de réserve atteint
+- `currentWinner`: ManyToOne → Person (enchérisseur gagnant actuel)
+- `totalBids`: Nombre total d'enchères
+
+**Relations**:
+- `bids`: OneToMany → Bid (1:N)
+- `order`: OneToOne → Order (commande finale)
+
+**Règles métier**:
+- Durée: **7 jours**
+- Extension automatique de **10 minutes** si enchère à H-1
+- Paliers progressifs selon le prix
+
+---
+
+### **12. BID**
+**Table**: `bids`
+
+**Description**: Enchère individuelle placée par un utilisateur.
+
+**Attributs**:
+- `encheres`: ManyToOne → Encheres
+- `bidder`: ManyToOne → Person
+- `amount`: Montant de l'enchère
+- `status`: Statut (ACTIVE, OUTBID, WINNING, WON, LOST)
+- `isAutoBid`: Enchère automatique
+- `maxAutoBidAmount`: Montant max pour enchère auto
+
+**Système d'enchères automatiques**:
+1. L'utilisateur définit un montant max
+2. Le système enchérit automatiquement par paliers
+3. Notification quand le montant max est atteint
+
+---
+
+### **13. VENTE_RAPIDE (Quick Sale)**
+**Table**: `vente_rapide`
+
+**Description**: Vente à prix fixe avec possibilité d'offres.
+
+**Attributs**:
+- `product`: OneToOne → Product
+- `fixedPrice`: Prix fixe affiché
+- `acceptOffers`: Accepte les offres
+- `minimumOfferPrice`: Prix minimum d'offre
+- `isAvailable`: Disponible à la vente
+- `soldAt`: Date de vente
+
+**Relations**:
+- `offers`: OneToMany → Offer (1:N)
+- `order`: OneToOne → Order (commande finale)
+
+---
+
+### **14. OFFER**
+**Table**: `offers`
+
+**Description**: Offre sur une vente rapide (négociation).
+
+**Attributs**:
+- `venteRapide`: ManyToOne → VenteRapide
+- `buyer`: ManyToOne → Person
+- `amount`: Montant proposé
+- `message`: Message optionnel
+- `status`: Statut (PENDING, ACCEPTED, REJECTED, EXPIRED, CANCELLED)
+- `respondedAt`: Date de réponse
+
+**Workflow**:
+1. Acheteur fait une offre
+2. Vendeur accepte/refuse dans 24h
+3. Si acceptée → création d'une commande
+
+---
+
+### **15. FAVORITE**
+**Table**: `favorites`
+
+**Description**: Favoris des utilisateurs (watchlist).
+
+**Attributs**:
+- `user`: ManyToOne → Person
+- `product`: ManyToOne → Product
+- Contrainte unique (user_id, product_id)
+
+---
+
+### **16. ORDER**
+**Table**: `orders`
+
+**Description**: Commande créée après une vente (enchères ou rapide).
+
+**Attributs principaux**:
+- `orderNumber`: Numéro unique de commande
+- `buyer`: ManyToOne → Person (acheteur)
+- `seller`: ManyToOne → Person (vendeur)
+- `encheres`: OneToOne → Encheres (si vente aux enchères)
+- `venteRapide`: OneToOne → VenteRapide (si vente rapide)
+- `productPrice`: Prix du produit
+- `shippingCost`: Frais de port
+- `platformFee`: Commission plateforme
+- `totalAmount`: Montant total
+- `status`: Statut (PENDING_PAYMENT, PAID, PREPARING, SHIPPED, IN_TRANSIT, DELIVERED, CANCELLED, REFUNDED, DISPUTED)
+- `shippingAddress`: ManyToOne → Address
+- `billingAddress`: ManyToOne → Address
+
+**Relations**:
+- `payment`: OneToOne → Payment (1:1)
+- `livraison`: OneToOne → Livraison (1:1)
+- `facture`: OneToOne → Facture (1:1)
+- `conversation`: OneToOne → Conversation (1:1)
+
+**Workflow de commande**:
+1. Création après vente
+2. Paiement Stripe (fonds bloqués)
+3. Préparation de la livraison
+4. Expédition
+5. Livraison
+6. Libération des fonds (J+3-5)
+7. Génération de facture
+
+---
+
+### **17. PAYMENT**
+**Table**: `payments`
+
+**Description**: Paiement via Stripe avec blocage des fonds.
+
+**Attributs**:
+- `order`: OneToOne → Order
+- `paymentIntentId`: ID Stripe Payment Intent
+- `amount`: Montant
+- `currency`: Devise (EUR)
+- `paymentMethod`: Méthode (CARD, BANK_TRANSFER, WALLET)
+- `status`: Statut (PENDING, PROCESSING, SUCCEEDED, FAILED, REFUNDED, CANCELLED)
+- `stripeChargeId`, `stripeCustomerId`: IDs Stripe
+- `errorMessage`: Message d'erreur si échec
+
+**Système de blocage**:
+- Fonds bloqués (HELD) chez Stripe
+- Libération après signature digitale
+- Délai: 3-5 jours ouvrés
+
+---
+
+### **18. LIVRAISON**
+**Table**: `livraisons`
+
+**Description**: Gestion de la livraison (transporteurs intégrés).
+
+**Attributs**:
+- `order`: OneToOne → Order
+- `transporteur`: ManyToOne → Transporteur
+- `trackingNumber`: Numéro de suivi
+- `status`: Statut (PENDING, LABEL_GENERATED, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED, RETURNED)
+- `labelUrl`: URL de l'étiquette
+- `estimatedDeliveryDate`: Date estimée
+- `shippedAt`, `deliveredAt`: Timestamps
+- `notes`: Notes additionnelles
+
+---
+
+### **19. TRANSPORTEUR**
+**Table**: `transporteurs`
+
+**Description**: Transporteurs disponibles (Colissimo, Chronopost, UPS, DHL, etc.).
+
+**Attributs**:
+- `name`: Nom du transporteur
+- `code`: Code (COLISSIMO, CHRONOPOST, UPS, DHL)
+- `logo`: URL du logo
+- `apiEndpoint`: URL de l'API
+- `trackingUrlPattern`: Pattern d'URL de suivi
+- `basePrice`: Prix de base
+- `active`: Actif
+- `description`: Description
+
+**Relations**:
+- `livraisons`: OneToMany → Livraison (1:N)
+
+---
+
+### **20. FACTURE**
+**Table**: `factures`
+
+**Description**: Facture PDF générée automatiquement.
+
+**Attributs**:
+- `order`: OneToOne → Order
+- `factureNumber`: Numéro unique de facture
+- `pdfUrl`: URL du PDF
+- `issuedAt`: Date d'émission
+
+**Génération**:
+- Automatique après livraison
+- Format PDF avec template professionnel
+- Envoi par email à l'acheteur et au vendeur
+
+---
+
+### **21. FORFAIT**
+**Table**: `forfaits`
+
+**Description**: Plans d'abonnement pour professionnels.
+
+**Attributs**:
+- `type`: Type (FREE, BASIC, PREMIUM, ENTERPRISE)
+- `name`: Nom du forfait
+- `description`: Description
+- `monthlyPrice`, `annualPrice`: Prix mensuel et annuel
+- `maxListings`: Nombre max d'annonces (null = illimité)
+- `maxPhotosPerListing`: Photos max par annonce
+- `featuredListings`: Annonces mises en avant
+- `prioritySupport`: Support prioritaire
+- `analyticsAccess`: Accès aux analytics
+- `customBranding`: Branding personnalisé
+- `commissionRate`: Taux de commission (%)
+- `active`: Actif
+
+**Relations**:
+- `features`: ManyToMany → Feature
+- `professionals`: OneToMany → Professional (1:N)
+
+**Forfaits disponibles**:
+1. **FREE**: Gratuit pour particuliers
+2. **BASIC**: 49€/mois (1 mois gratuit)
+3. **PREMIUM**: 99€/mois
+4. **ENTERPRISE**: Sur mesure
+
+---
+
+### **22. FEATURE**
+**Table**: `features`
+
+**Description**: Fonctionnalités débloquables par forfait.
+
+**Attributs**:
+- `name`: Nom de la fonctionnalité
+- `code`: Code unique (ex: "FEATURED_LISTINGS")
+- `description`: Description
+- `icon`: Icône
+- `active`: Active
+
+**Relations**:
+- `forfaits`: ManyToMany → Forfait
+
+---
+
+### **23. CONVERSATION**
+**Table**: `conversations`
+
+**Description**: Conversations privées entre utilisateurs.
+
+**Attributs**:
+- `user1`, `user2`: ManyToOne → Person (2 participants)
+- `order`: OneToOne → Order (conversation liée à une commande)
+- `user1Archived`, `user2Archived`: Archivage par utilisateur
+- `lastMessageAt`: Timestamp du dernier message
+
+**Relations**:
+- `messages`: OneToMany → Message (1:N)
+
+---
+
+### **24. MESSAGE**
+**Table**: `messages`
+
+**Description**: Messages dans une conversation.
+
+**Attributs**:
+- `conversation`: ManyToOne → Conversation
+- `sender`: ManyToOne → Person
+- `content`: Contenu du message
+- `isRead`: Lu
+- `readAt`: Date de lecture
+
+---
+
+### **25. SUPPORT_TICKET**
+**Table**: `support_tickets`
+
+**Description**: Tickets de support technique.
+
+**Attributs**:
+- `ticketNumber`: Numéro unique
+- `user`: ManyToOne → Person (créateur)
+- `assignedAdmin`: ManyToOne → Admin (admin assigné)
+- `subject`: Sujet
+- `description`: Description
+- `status`: Statut (OPEN, IN_PROGRESS, WAITING_FOR_USER, RESOLVED, CLOSED)
+- `priority`: Priorité (LOW, MEDIUM, HIGH, URGENT)
+- `category`: Catégorie
+- `resolvedAt`, `closedAt`: Timestamps
+
+**Relations**:
+- `ticketMessages`: OneToMany → TicketMessage (1:N)
+
+---
+
+### **26. TICKET_MESSAGE**
+**Table**: `ticket_messages`
+
+**Description**: Messages dans un ticket de support.
+
+**Attributs**:
+- `supportTicket`: ManyToOne → SupportTicket
+- `sender`: ManyToOne → Person
+- `content`: Contenu
+- `isStaffReply`: Réponse du staff
+
+---
+
+### **27. NOTIFICATION**
+**Table**: `notifications`
+
+**Description**: Notifications in-app et email.
+
+**Attributs**:
+- `user`: ManyToOne → Person
+- `type`: Type (BID_PLACED, BID_OUTBID, AUCTION_WON, OFFER_RECEIVED, etc.)
+- `title`: Titre
+- `message`: Message
+- `linkUrl`: Lien vers la ressource
+- `isRead`: Lu
+- `readAt`: Date de lecture
+- `emailSent`: Email envoyé
+- `emailSentAt`: Date d'envoi email
+- `metadata`: Métadonnées JSON
+
+**Types de notifications**:
+- Enchères: BID_PLACED, BID_OUTBID, AUCTION_WON, AUCTION_LOST
+- Offres: OFFER_RECEIVED, OFFER_ACCEPTED, OFFER_REJECTED
+- Ventes: PRODUCT_SOLD, PAYMENT_RECEIVED
+- Commandes: ORDER_SHIPPED, ORDER_DELIVERED
+- Messages: MESSAGE_RECEIVED
+- Favoris: FAVORITE_UPDATED
+- Alertes: ALERT_TRIGGERED
+- Système: SYSTEM_NOTIFICATION
+
+---
+
+### **28. ALERT**
+**Table**: `alerts`
+
+**Description**: Alertes personnalisées pour nouveaux produits.
+
+**Attributs**:
+- `user`: ManyToOne → Person
+- `category`: ManyToOne → Category
+- `keywords`: Mots-clés
+- `minPrice`, `maxPrice`: Fourchette de prix
+- `condition`: État du produit
+- `active`: Active
+- `emailNotification`, `inAppNotification`: Types de notifications
+- `lastTriggeredAt`: Dernière activation
+
+**Fonctionnement**:
+1. Professionnel configure une alerte
+2. Nouveau produit correspondant → notification
+3. Email + notification in-app
+
 ---
 
 ## Structure de la Base de Données
@@ -13,8 +1193,8 @@ Cette documentation complète contient :
 ┌─────────────────────────────────────────────────────────────────┐
 │                        PERSON (Abstract)                         │
 │  ┌────────────┐    ┌──────────────┐    ┌──────────────┐        │
-│  │ Particulier│    │ Professional │    │    Admin     │        │
-│  │  (vend)    │    │(achète/vend) │    │   (gère)     │        │
+│  │ Individual │    │ Professional │    │    Admin     │        │
+│  │  (sells)   │    │(buys/sells)  │    │  (manages)   │        │
 │  └────────────┘    └──────────────┘    └──────────────┘        │
 └─────────────────────────────────────────────────────────────────┘
            │                   │                    │
@@ -22,7 +1202,7 @@ Cette documentation complète contient :
            ▼                   ▼                    ▼
     ┌───────────┐      ┌─────────────┐     ┌──────────────┐
     │  Address  │      │  Specialty  │     │Support Ticket│
-    │ Favorite  │      │   Forfait   │     │   Settings   │
+    │ Favorite  │      │    Plan     │     │   Settings   │
     │Notification│      │  Interest   │     └──────────────┘
     └───────────┘      └─────────────┘
            │
@@ -34,8 +1214,8 @@ Cette documentation complète contient :
     │  └────────┘  └────────┘  └────────────┘     │
     │                                               │
     │  ┌─────────────────┐  ┌─────────────────┐  │
-    │  │   ENCHERES      │  │  VENTE RAPIDE   │  │
-    │  │  (Auction)      │  │  (Quick Sale)   │  │
+    │  │    AUCTION      │  │   QUICK SALE    │  │
+    │  │                 │  │                 │  │
     │  │                 │  │                 │  │
     │  │  ┌──────────┐   │  │  ┌──────────┐  │  │
     │  │  │   BID    │   │  │  │  OFFER   │  │  │
@@ -49,46 +1229,46 @@ Cette documentation complète contient :
               │                     │
               │  ┌────────────┐    │
               │  │  Payment   │    │
-              │  │  Livraison │    │
-              │  │  Facture   │    │
+              │  │  Delivery  │    │
+              │  │  Invoice   │    │
               │  └────────────┘    │
               └─────────────────────┘
 ```
 
 
-### Tables Principales (31 au total)
+### Main Tables (31 total)
 
-#### Utilisateurs
-- **Person** (table parent abstraite)
-  - Particulier (hérite de Person)
-  - Professional (hérite de Person)  
-  - Admin (hérite de Person)
-- **Address** - Adresses des utilisateurs
-- **Specialty** - Spécialités des professionnels
+#### Users
+- **Person** (abstract parent table)
+  - Individual (inherits from Person)
+  - Professional (inherits from Person)  
+  - Admin (inherits from Person)
+- **Address** - User addresses
+- **Specialty** - Professional specialties
 
-#### Catégories et Produits
-- **Category** - 13 catégories d'objets
-- **Product** - Objets mis en vente
-- **Photo** - Photos des produits (min 10)
-- **Document** - Documents/certificats
+#### Categories and Products
+- **Category** - 13 object categories
+- **Product** - Items for sale
+- **Photo** - Product photos (min 10)
+- **Document** - Documents/certificates
 
-#### Ventes
-- **Encheres** - Système d'enchères
-- **Bid** - Enchères individuelles
-- **VenteRapide** - Ventes rapides
-- **Offer** - Offres sur ventes rapides
-- **Favorite** - Favoris des utilisateurs
+#### Sales
+- **Auction** - Auction system
+- **Bid** - Individual bids
+- **QuickSale** - Quick sales
+- **Offer** - Offers on quick sales
+- **Favorite** - User favorites
 
 #### Commandes et Paiements
 - **Order** - Commandes
 - **Payment** - Paiements Stripe
 - **Livraison** - Gestion des livraisons
-- **Transporteur** - Liste des transporteurs
-- **Facture** - Factures générées
+- **Carrier** - List of carriers
+- **Invoice** - Generated invoices
 
-#### Abonnements
-- **Forfait** - Plans d'abonnement
-- **Feature** - Fonctionnalités débloquables
+#### Subscriptions
+- **Plan** - Subscription plans
+- **Feature** - Unlockable features
 
 #### Communication
 - **Conversation** - Conversations entre users
@@ -107,15 +1287,15 @@ Cette documentation complète contient :
 
 ---
 
-## Relations Clés
+## Key Relations
 
-### Relations One-to-One
-- Product ↔ Encheres
-- Product ↔ VenteRapide
+### One-to-One Relations
+- Product ↔ Auction
+- Product ↔ QuickSale
 - Product ↔ Order
 - Order ↔ Payment
-- Order ↔ Livraison
-- Order ↔ Facture
+- Order ↔ Delivery
+- Order ↔ Invoice
 
 ### Relations One-to-Many
 - Person → Address (1:N)
@@ -125,30 +1305,30 @@ Cette documentation complète contient :
 - Encheres → Bid (1:N)
 - Category → Product (1:N)
 
-### Relations Many-to-Many
+### Many-to-Many Relations
 - Professional ↔ Specialty
-- Professional ↔ Category (intérêts)
-- Forfait ↔ Feature
+- Professional ↔ Category (interests)
+- Plan ↔ Feature
 - Conversation ↔ Person (participants)
 
 ---
 
-## Fonctionnalités Principales
+## Main Features
 
-### Pour les Particuliers
-Inscription gratuite
-Vente d'objets uniquement
-Mode enchères ou vente rapide
-Suivi des ventes
-Messagerie avec acheteurs
+### For Individuals
+Free registration
+Selling only
+Auction or quick sale mode
+Sales tracking
+Messaging with buyers
 
-### Pour les Professionnels  
-Forfait 49€/mois (1 mois gratuit)
-Achat et vente d'objets
-Participation aux enchères
-Offres sur ventes rapides
-Recherche avancée avec filtres
-Favoris et historique
+### For Professionals  
+Plan €49/month (1 month free)
+Buying and selling items
+Auction participation
+Offers on quick sales
+Advanced search with filters
+Favorites and history
 Notifications email/in-app
 
 ### Pour les Admins
@@ -164,39 +1344,39 @@ Statistiques et analytics
 
 ## Système d'Enchères
 
-### Fonctionnement
-- Durée : **7 jours** par défaut
-- Prix de départ : **-10%** du prix souhaité (modifiable)
-- Extension : **+10 minutes** si enchère à H-1
-- Prix de réserve : Prix minimum souhaité par le vendeur
+### How it Works
+- Duration: **7 days** by default
+- Starting price: **-10%** of desired price (adjustable)
+- Extension: **+10 minutes** if bid at H-1
+- Reserve price: Minimum price desired by seller
 
-### Paliers d'Enchères
-- < 100€ → paliers de **10€**
-- 100-500€ → paliers de **50€**
-- 500-1000€ → paliers de **100€**
-- 1000-5000€ → paliers de **200€**
+### Bid Increments
+- < €100 → increments of **€10**
+- €100-500 → increments of **€50**
+- €500-1000 → increments of **€100**
+- €1000-5000 → increments of **€200**
 - etc.
 
-### Enchères Automatiques
-- L'acheteur définit un montant max
-- Le système enchérit automatiquement par paliers
-- Notification si le montant max est atteint
+### Automatic Bidding
+- Buyer sets a maximum amount
+- System automatically bids in increments
+- Notification when maximum amount is reached
 
 ---
 
-## Flux de Paiement
+## Payment Flow
 
-1. **Validation de l'achat** → Professional valide dans 24h
-2. **Paiement Stripe** → Fonds **bloqués** (HELD)
-3. **Livraison planifiée** → Transporteur récupère l'objet
-4. **Signature digitale** → Acheteur signe la réception
-5. **Libération des fonds** → 3-5 jours après signature
-6. **Facture générée** → PDF automatique
+1. **Purchase validation** → Professional validates within 24h
+2. **Stripe payment** → Funds **held** (HELD)
+3. **Scheduled delivery** → Carrier picks up the item
+4. **Digital signature** → Buyer signs upon receipt
+5. **Funds release** → 3-5 days after signature
+6. **Invoice generated** → Automatic PDF
 
 ### Commissions
-- **Acheteur** : +3% du prix
-- **Vendeur** : -2% du prix
-- **Modifiable** par catégorie via admin
+- **Buyer**: +3% of price
+- **Seller**: -2% of price
+- **Adjustable** per category via admin
 
 ---
 
@@ -377,34 +1557,36 @@ Classe abstraite représentant tous les utilisateurs de la plateforme.
 
 ---
 
-### 2. **Particulier extends Person**
-Représente un utilisateur particulier (vendeur uniquement).
+### 2. **Individual extends Person**
+Represents an individual user (seller only).
 
-**Attributs supplémentaires:**
-- `isVerified` (Boolean, default: false)
-- `isOver18Certified` (Boolean, NOT NULL)
+**Additional attributes:**
+- `identityVerified` (Boolean, default: false)
+- `identityDocumentUrl` (String)
+- `maxSalesPerMonth` (Integer, default: 10)
 
-**Relations héritées de Person**
+**Inherited relations from Person**
 
 ---
 
 ### 3. **Professional extends Person**
-Représente un professionnel (acheteur et vendeur).
+Represents a professional (buyer and seller).
 
-**Attributs supplémentaires:**
+**Additional attributes:**
 - `companyName` (String, NOT NULL)
-- `jobTitle` (String)
-- `siret` (String, UNIQUE, NOT NULL)
-- `kbisDocument` (String, URL)
-- `isVerified` (Boolean, default: false)
-- `mandateSignedAt` (LocalDateTime)
+- `siret` (String, UNIQUE)
+- `tvaNumber` (String, UNIQUE)
+- `website` (String)
+- `companyDescription` (Text)
+- `certified` (Boolean, default: false)
+- `certificationUrl` (String)
 
-**Relations supplémentaires:**
+**Additional relations:**
 - `specialties` (Many-to-Many → Specialty)
-- `objectsOfInterest` (Many-to-Many → Category)
-- `forfait` (Many-to-One → Forfait)
-- `forfaitStartDate` (LocalDateTime)
-- `forfaitEndDate` (LocalDateTime)
+- `interests` (Many-to-Many → Category)
+- `plan` (Many-to-One → Plan)
+- `planStartDate` (LocalDateTime)
+- `planEndDate` (LocalDateTime)
 
 ---
 
@@ -435,35 +1617,34 @@ Gère les adresses des utilisateurs.
 - `person` (Many-to-One → Person)
 
 ---
-
+Object categories (jewelry, furniture, etc.).
 ### 6. **Category**
-Catégories des objets (bijoux, meubles, etc.).
+**Attributes:**
 
 **Attributs:**
 - `id` (Long, PK)
-- `name` (String, UNIQUE, NOT NULL)
-- `description` (Text)
-- `commissionRate` (Double, default: 2.0) // Commission spécifique par catégorie
+- `iconUrl` (String)
+- `active` (Boolean, default: true)
 - `icon` (String, URL)
 - `isActive` (Boolean, default: true)
 - `createdAt` (LocalDateTime)
 
-**Relations:**
+- `interestedProfessionals` (Many-to-Many → Professional)
 - `products` (One-to-Many → Product)
-- `professionalInterests` (Many-to-Many → Professional)
-
-**Exemples de catégories:**
-- Bijoux & montres
-- Meubles anciens
-- Objets d'art & tableaux
-- Objets de collection
-- Vins & spiritueux
-- Instruments de musique
-- Livres anciens
-- Mode & accessoires de luxe
-- Horlogerie
+**Category examples:**
+- Jewelry & watches
+- Antique furniture
+- Art & paintings
+- Collectibles
+- Wines & spirits
+- Musical instruments
+- Rare books
+- Luxury fashion & accessories
+- Watches
+- Vintage photographs
+- Tableware & silverware
 - Photographies anciennes
-- Vaisselle & argenterie
+- Collector vehicles
 - Sculptures
 - Véhicules de collection
 
