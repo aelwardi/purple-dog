@@ -2,6 +2,7 @@ package com.purple_dog.mvp.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Message {
 
     @Id
@@ -27,6 +29,19 @@ public class Message {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Column(columnDefinition = "TEXT")
+    private String originalContent;
+
+    private Boolean wasFiltered = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String filteredWords;
+
+    private Boolean isBlocked = false;
+
+    private String blockReason;
+
 
     private Boolean isRead = false;
 
