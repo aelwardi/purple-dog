@@ -7,12 +7,14 @@ import com.purple_dog.mvp.dto.AddressResponseDTO;
 import com.purple_dog.mvp.dto.AddressUpdateDTO;
 import com.purple_dog.mvp.entities.Address;
 import com.purple_dog.mvp.entities.Person;
+import com.purple_dog.mvp.exceptions.InvalidOperationException;
 import com.purple_dog.mvp.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,168 +27,192 @@ public class AddressService {
     private final AddressRepository addressRepository;
     private final PersonRepository personRepository;
 
-    public AddressResponseDTO createAddress(AddressCreateDTO dto) {
-        log.debug("Creating address for person: {}", dto.getPersonId());
+    private static final int MAX_ADDRESSES_PER_USER = 10;
 
-        Person person = personRepository.findById(dto.getPersonId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person not found with id: " + dto.getPersonId()));
+    /**
+     * Créer une nouvelle adresse pour un utilisateur
+     */
+    public AddressResponseDTO createAddress(Long personId, AddressCreateDTO dto) {
+        log.info("Creating address for person: {}", personId);
 
-        // Si cette adresse est définie par défaut et qu'une adresse par défaut existe déjà
-        if (Boolean.TRUE.equals(dto.getIsDefault())) {
-            removeExistingDefaultAddress(dto.getPersonId());
+        Person person = personRepository.findById(personId)
+                .orElseThrow(() -> new ResourceNotFoundException("Person not found with id: " + personId));
+
+        long addressCount = addressRepository.countByPersonId(personId);
+        if (addressCount >= MAX_ADDRESSES_PER_USER) {
+            throw new InvalidOperationException("Maximum number of addresses (" + MAX_ADDRESSES_PER_USER + ") reached");
         }
 
-        Address address = new Address();
-        address.setPerson(person);
-        address.setLabel(dto.getLabel());
-        address.setStreet(dto.getStreet());
-        address.setComplement(dto.getComplement());
-        address.setCity(dto.getCity());
-        address.setPostalCode(dto.getPostalCode());
-        address.setCountry(dto.getCountry() != null ? dto.getCountry() : "France");
-        address.setIsDefault(dto.getIsDefault() != null ? dto.getIsDefault() : false);
+        boolean shouldBeDefault = addressCount == 0 || (dto.getIsDefault() != null && dto.getIsDefault());
 
-        Address savedAddress = addressRepository.save(address);
-        log.info("Address created successfully with ID: {}", savedAddress.getId());
+        if (shouldBeDefault) {
+            addressRepository.resetDefaultForPerson(personId);
+        }
 
-        return mapToResponseDTO(savedAddress);
-    }
+        Address address = Address.builder()
+                .person(person)
+                .label(dto.getLabel())
+                .street(dto.getStreet())
+                .complement(dto.getComplement())
+                .city(dto.getCity())
+                .postalCode(dto.getPostalCode())
+                .country(dto.getCountry())
+                .isDefault(shouldBeDefault)
+                .createdAt(LocalDateTime.now())
+                .build();
 
-    @Transactional(readOnly = true)
-    public AddressResponseDTO getAddressById(Long id) {
-        log.debug("Fetching address with ID: {}", id);
-        Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
+        address = addressRepository.save(address);
+        log.info("Address created successfully with id: {}", address.getId());
+
         return mapToResponseDTO(address);
     }
 
-    @Transactional(readOnly = true)
-    public List<AddressResponseDTO> getAllAddresses() {
-        log.debug("Fetching all addresses");
-        return addressRepository.findAll().stream()
+    /**
+     * Récupérer toutes les adresses d'un utilisateur
+     */
+    public List<AddressResponseDTO> getUserAddresses(Long personId) {
+        log.info("Fetching addresses for person: {}", personId);
+
+        if (!personRepository.existsById(personId)) {
+            throw new ResourceNotFoundException("Person not found with id: " + personId);
+        }
+
+        return addressRepository.findByPersonIdOrderByIsDefaultDescCreatedAtDesc(personId).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<AddressResponseDTO> getAddressesByPerson(Long personId) {
-        log.debug("Fetching addresses for person: {}", personId);
-        return addressRepository.findByPersonId(personId).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-    }
+    /**
+     * Récupérer une adresse spécifique
+     */
+    public AddressResponseDTO getAddress(Long addressId, Long personId) {
+        log.info("Fetching address {} for person {}", addressId, personId);
 
-    @Transactional(readOnly = true)
-    public AddressResponseDTO getDefaultAddressByPerson(Long personId) {
-        log.debug("Fetching default address for person: {}", personId);
-        Address address = addressRepository.findByPersonIdAndIsDefaultTrue(personId)
-                .orElseThrow(() -> new ResourceNotFoundException("Default address not found for person: " + personId));
+        Address address = addressRepository.findByIdAndPersonId(addressId, personId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
+
         return mapToResponseDTO(address);
     }
 
-    @Transactional(readOnly = true)
-    public List<AddressResponseDTO> getAddressesByCity(String city) {
-        log.debug("Fetching addresses by city: {}", city);
-        return addressRepository.findByCity(city).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+    /**
+     * Récupérer l'adresse par défaut d'un utilisateur
+     */
+    public AddressResponseDTO getDefaultAddress(Long personId) {
+        log.info("Fetching default address for person: {}", personId);
+
+        if (!personRepository.existsById(personId)) {
+            throw new ResourceNotFoundException("Person not found with id: " + personId);
+        }
+
+        Address address = addressRepository.findByPersonIdAndIsDefault(personId, true)
+                .orElseThrow(() -> new ResourceNotFoundException("No default address found for person: " + personId));
+
+        return mapToResponseDTO(address);
     }
 
-    @Transactional(readOnly = true)
-    public List<AddressResponseDTO> getAddressesByCountry(String country) {
-        log.debug("Fetching addresses by country: {}", country);
-        return addressRepository.findByCountry(country).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-    }
+    /**
+     * Mettre à jour une adresse
+     */
+    public AddressResponseDTO updateAddress(Long addressId, Long personId, AddressUpdateDTO dto) {
+        log.info("Updating address {} for person {}", addressId, personId);
 
-    public AddressResponseDTO updateAddress(Long id, AddressUpdateDTO dto) {
-        log.debug("Updating address with ID: {}", id);
-
-        Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
+        Address address = addressRepository.findByIdAndPersonId(addressId, personId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
         if (dto.getLabel() != null) {
             address.setLabel(dto.getLabel());
         }
-
         if (dto.getStreet() != null) {
             address.setStreet(dto.getStreet());
         }
-
         if (dto.getComplement() != null) {
             address.setComplement(dto.getComplement());
         }
-
         if (dto.getCity() != null) {
             address.setCity(dto.getCity());
         }
-
         if (dto.getPostalCode() != null) {
             address.setPostalCode(dto.getPostalCode());
         }
-
         if (dto.getCountry() != null) {
             address.setCountry(dto.getCountry());
         }
 
-        if (dto.getIsDefault() != null && Boolean.TRUE.equals(dto.getIsDefault())) {
-            removeExistingDefaultAddress(address.getPerson().getId());
+        if (dto.getIsDefault() != null && dto.getIsDefault() && !address.getIsDefault()) {
+            addressRepository.resetDefaultForPerson(personId);
             address.setIsDefault(true);
-        } else if (dto.getIsDefault() != null) {
-            address.setIsDefault(false);
         }
 
-        Address updatedAddress = addressRepository.save(address);
-        log.info("Address updated successfully with ID: {}", updatedAddress.getId());
+        address = addressRepository.save(address);
+        log.info("Address updated successfully");
 
-        return mapToResponseDTO(updatedAddress);
+        return mapToResponseDTO(address);
     }
 
-    public AddressResponseDTO setDefaultAddress(Long id) {
-        log.debug("Setting address {} as default", id);
+    /**
+     * Définir une adresse comme adresse par défaut
+     */
+    public AddressResponseDTO setDefaultAddress(Long addressId, Long personId) {
+        log.info("Setting address {} as default for person {}", addressId, personId);
 
-        Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
+        Address address = addressRepository.findByIdAndPersonId(addressId, personId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
-        removeExistingDefaultAddress(address.getPerson().getId());
-        address.setIsDefault(true);
+        if (!address.getIsDefault()) {
+            addressRepository.resetDefaultForPerson(personId);
 
-        Address updatedAddress = addressRepository.save(address);
-        log.info("Address {} set as default successfully", updatedAddress.getId());
-
-        return mapToResponseDTO(updatedAddress);
-    }
-
-    public void deleteAddress(Long id) {
-        log.debug("Deleting address with ID: {}", id);
-
-        if (!addressRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Address not found with id: " + id);
+            address.setIsDefault(true);
+            address = addressRepository.save(address);
         }
 
-        addressRepository.deleteById(id);
-        log.info("Address deleted successfully with ID: {}", id);
+        log.info("Address set as default successfully");
+        return mapToResponseDTO(address);
     }
 
-    @Transactional(readOnly = true)
-    public long countAddressesByPerson(Long personId) {
+    /**
+     * Supprimer une adresse
+     */
+    public void deleteAddress(Long addressId, Long personId) {
+        log.info("Deleting address {} for person {}", addressId, personId);
+
+        Address address = addressRepository.findByIdAndPersonId(addressId, personId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
+
+        boolean wasDefault = address.getIsDefault();
+        addressRepository.delete(address);
+
+        if (wasDefault) {
+            List<Address> remainingAddresses = addressRepository.findByPersonIdOrderByIsDefaultDescCreatedAtDesc(personId);
+            if (!remainingAddresses.isEmpty()) {
+                Address newDefault = remainingAddresses.get(0);
+                newDefault.setIsDefault(true);
+                addressRepository.save(newDefault);
+                log.info("New default address set: {}", newDefault.getId());
+            }
+        }
+
+        log.info("Address deleted successfully");
+    }
+
+    /**
+     * Compter les adresses d'un utilisateur
+     */
+    public long countUserAddresses(Long personId) {
         return addressRepository.countByPersonId(personId);
     }
 
-    private void removeExistingDefaultAddress(Long personId) {
-        addressRepository.findByPersonIdAndIsDefaultTrue(personId)
-                .ifPresent(existingDefault -> {
-                    existingDefault.setIsDefault(false);
-                    addressRepository.save(existingDefault);
-                });
+    /**
+     * Vérifier si un utilisateur a des adresses
+     */
+    public boolean hasAddresses(Long personId) {
+        return addressRepository.countByPersonId(personId) > 0;
     }
 
     private AddressResponseDTO mapToResponseDTO(Address address) {
+        String fullAddress = buildFullAddress(address);
+
         return AddressResponseDTO.builder()
                 .id(address.getId())
-                .personId(address.getPerson().getId())
-                .personName(address.getPerson().getFirstName() + " " + address.getPerson().getLastName())
                 .label(address.getLabel())
                 .street(address.getStreet())
                 .complement(address.getComplement())
@@ -195,6 +221,23 @@ public class AddressService {
                 .country(address.getCountry())
                 .isDefault(address.getIsDefault())
                 .createdAt(address.getCreatedAt())
+                .fullAddress(fullAddress)
                 .build();
     }
+
+    private String buildFullAddress(Address address) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(address.getStreet());
+
+        if (address.getComplement() != null && !address.getComplement().trim().isEmpty()) {
+            sb.append(", ").append(address.getComplement());
+        }
+
+        sb.append(", ").append(address.getPostalCode())
+          .append(" ").append(address.getCity())
+          .append(", ").append(address.getCountry());
+
+        return sb.toString();
+    }
 }
+

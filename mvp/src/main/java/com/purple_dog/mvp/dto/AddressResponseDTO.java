@@ -14,8 +14,6 @@ import java.time.LocalDateTime;
 public class AddressResponseDTO {
 
     private Long id;
-    private Long personId;
-    private String personName;
     private String label;
     private String street;
     private String complement;
@@ -24,4 +22,6 @@ public class AddressResponseDTO {
     private String country;
     private Boolean isDefault;
     private LocalDateTime createdAt;
+
+    private String fullAddress;
 }

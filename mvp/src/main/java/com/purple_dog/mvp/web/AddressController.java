@@ -11,12 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/addresses")
+@RequestMapping("/api/addresses")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
@@ -24,85 +22,110 @@ public class AddressController {
 
     private final AddressService addressService;
 
-    @PostMapping
-    public ResponseEntity<AddressResponseDTO> createAddress(@Valid @RequestBody AddressCreateDTO dto) {
-        log.info("POST /addresses - Creating address for person: {}", dto.getPersonId());
-        AddressResponseDTO created = addressService.createAddress(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    /**
+     * Créer une nouvelle adresse
+     */
+    @PostMapping("/person/{personId}")
+    public ResponseEntity<AddressResponseDTO> createAddress(
+            @PathVariable Long personId,
+            @Valid @RequestBody AddressCreateDTO dto) {
+
+        log.info("Request to create address for person: {}", personId);
+        AddressResponseDTO response = addressService.createAddress(personId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AddressResponseDTO> getAddressById(@PathVariable Long id) {
-        log.info("GET /addresses/{} - Fetching address", id);
-        AddressResponseDTO address = addressService.getAddressById(id);
-        return ResponseEntity.ok(address);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<AddressResponseDTO>> getAllAddresses() {
-        log.info("GET /addresses - Fetching all addresses");
-        List<AddressResponseDTO> addresses = addressService.getAllAddresses();
-        return ResponseEntity.ok(addresses);
-    }
-
+    /**
+     * Récupérer toutes les adresses d'un utilisateur
+     */
     @GetMapping("/person/{personId}")
-    public ResponseEntity<List<AddressResponseDTO>> getAddressesByPerson(@PathVariable Long personId) {
-        log.info("GET /addresses/person/{} - Fetching addresses by person", personId);
-        List<AddressResponseDTO> addresses = addressService.getAddressesByPerson(personId);
+    public ResponseEntity<List<AddressResponseDTO>> getUserAddresses(@PathVariable Long personId) {
+        log.info("Request to get addresses for person: {}", personId);
+        List<AddressResponseDTO> addresses = addressService.getUserAddresses(personId);
         return ResponseEntity.ok(addresses);
     }
 
-    @GetMapping("/person/{personId}/default")
-    public ResponseEntity<AddressResponseDTO> getDefaultAddressByPerson(@PathVariable Long personId) {
-        log.info("GET /addresses/person/{}/default - Fetching default address for person", personId);
-        AddressResponseDTO address = addressService.getDefaultAddressByPerson(personId);
+    /**
+     * Récupérer une adresse spécifique
+     */
+    @GetMapping("/{addressId}/person/{personId}")
+    public ResponseEntity<AddressResponseDTO> getAddress(
+            @PathVariable Long addressId,
+            @PathVariable Long personId) {
+
+        log.info("Request to get address {} for person {}", addressId, personId);
+        AddressResponseDTO address = addressService.getAddress(addressId, personId);
         return ResponseEntity.ok(address);
     }
 
-    @GetMapping("/city/{city}")
-    public ResponseEntity<List<AddressResponseDTO>> getAddressesByCity(@PathVariable String city) {
-        log.info("GET /addresses/city/{} - Fetching addresses by city", city);
-        List<AddressResponseDTO> addresses = addressService.getAddressesByCity(city);
-        return ResponseEntity.ok(addresses);
+    /**
+     * Récupérer l'adresse par défaut
+     */
+    @GetMapping("/person/{personId}/default")
+    public ResponseEntity<AddressResponseDTO> getDefaultAddress(@PathVariable Long personId) {
+        log.info("Request to get default address for person: {}", personId);
+        AddressResponseDTO address = addressService.getDefaultAddress(personId);
+        return ResponseEntity.ok(address);
     }
 
-    @GetMapping("/country/{country}")
-    public ResponseEntity<List<AddressResponseDTO>> getAddressesByCountry(@PathVariable String country) {
-        log.info("GET /addresses/country/{} - Fetching addresses by country", country);
-        List<AddressResponseDTO> addresses = addressService.getAddressesByCountry(country);
-        return ResponseEntity.ok(addresses);
-    }
-
-    @PutMapping("/{id}")
+    /**
+     * Mettre à jour une adresse
+     */
+    @PutMapping("/{addressId}/person/{personId}")
     public ResponseEntity<AddressResponseDTO> updateAddress(
-            @PathVariable Long id,
+            @PathVariable Long addressId,
+            @PathVariable Long personId,
             @Valid @RequestBody AddressUpdateDTO dto) {
-        log.info("PUT /addresses/{} - Updating address", id);
-        AddressResponseDTO updated = addressService.updateAddress(id, dto);
-        return ResponseEntity.ok(updated);
-    }
 
-    @PatchMapping("/{id}/set-default")
-    public ResponseEntity<AddressResponseDTO> setDefaultAddress(@PathVariable Long id) {
-        log.info("PATCH /addresses/{}/set-default - Setting address as default", id);
-        AddressResponseDTO updated = addressService.setDefaultAddress(id);
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteAddress(@PathVariable Long id) {
-        log.info("DELETE /addresses/{} - Deleting address", id);
-        addressService.deleteAddress(id);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Address deleted successfully");
+        log.info("Request to update address {} for person {}", addressId, personId);
+        AddressResponseDTO response = addressService.updateAddress(addressId, personId, dto);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/count/person/{personId}")
-    public ResponseEntity<Map<String, Long>> countAddressesByPerson(@PathVariable Long personId) {
-        log.info("GET /addresses/count/person/{} - Counting addresses by person", personId);
-        Map<String, Long> count = new HashMap<>();
-        count.put("count", addressService.countAddressesByPerson(personId));
+    /**
+     * Définir une adresse comme adresse par défaut
+     */
+    @PutMapping("/{addressId}/person/{personId}/set-default")
+    public ResponseEntity<AddressResponseDTO> setDefaultAddress(
+            @PathVariable Long addressId,
+            @PathVariable Long personId) {
+
+        log.info("Request to set address {} as default for person {}", addressId, personId);
+        AddressResponseDTO response = addressService.setDefaultAddress(addressId, personId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Supprimer une adresse
+     */
+    @DeleteMapping("/{addressId}/person/{personId}")
+    public ResponseEntity<Void> deleteAddress(
+            @PathVariable Long addressId,
+            @PathVariable Long personId) {
+
+        log.info("Request to delete address {} for person {}", addressId, personId);
+        addressService.deleteAddress(addressId, personId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Compter les adresses d'un utilisateur
+     */
+    @GetMapping("/person/{personId}/count")
+    public ResponseEntity<Long> countUserAddresses(@PathVariable Long personId) {
+        log.info("Request to count addresses for person: {}", personId);
+        long count = addressService.countUserAddresses(personId);
         return ResponseEntity.ok(count);
     }
+
+    /**
+     * Vérifier si un utilisateur a des adresses
+     */
+    @GetMapping("/person/{personId}/has-addresses")
+    public ResponseEntity<Boolean> hasAddresses(@PathVariable Long personId) {
+        log.info("Request to check if person {} has addresses", personId);
+        boolean hasAddresses = addressService.hasAddresses(personId);
+        return ResponseEntity.ok(hasAddresses);
+    }
 }
+
