@@ -34,6 +34,18 @@ public class Product {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal widthCm;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal heightCm;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal depthCm;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal weightKg;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCondition productCondition;
@@ -94,4 +106,3 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
 }
-
