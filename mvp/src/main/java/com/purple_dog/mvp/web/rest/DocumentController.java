@@ -1,4 +1,4 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.DocumentResponseDTO;
 import com.purple_dog.mvp.dto.DocumentUploadDTO;

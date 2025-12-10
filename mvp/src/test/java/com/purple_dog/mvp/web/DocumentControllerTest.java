@@ -4,6 +4,7 @@ import com.purple_dog.mvp.dto.DocumentResponseDTO;
 import com.purple_dog.mvp.entities.DocumentStatus;
 import com.purple_dog.mvp.entities.DocumentType;
 import com.purple_dog.mvp.services.DocumentService;
+import com.purple_dog.mvp.web.rest.DocumentController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
