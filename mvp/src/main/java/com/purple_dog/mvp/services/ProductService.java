@@ -165,7 +165,7 @@ public class ProductService {
      * Liste les produits favoris d'un utilisateur.
      */
     public List<ProductResponse> listFavorites(Long userId) {
-        return favoriteRepository.findAllByUserId(userId).stream()
+        return favoriteRepository.findByUserIdWithProducts(userId).stream()
                 .map(Favorite::getProduct)
                 .map(this::toResponse)
                 .collect(Collectors.toList());

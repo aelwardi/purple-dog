@@ -12,8 +12,6 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
     Optional<Product> findById(Long id);
-public interface ProductRepository extends JpaRepository<Product, Long> {
-}
 
     List<Product> findAllBySellerId(Long sellerId);
 
