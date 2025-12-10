@@ -6,6 +6,8 @@ import com.purple_dog.mvp.dto.ProductSearchRequest;
 import com.purple_dog.mvp.entities.ProductStatus;
 import com.purple_dog.mvp.exceptions.ProductException;
 import com.purple_dog.mvp.services.ProductService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Tag(name = "Product Management", description = "APIs for managing products")
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor

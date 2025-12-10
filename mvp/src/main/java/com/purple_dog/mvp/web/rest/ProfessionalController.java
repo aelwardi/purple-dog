@@ -5,6 +5,8 @@ import com.purple_dog.mvp.dto.ProfessionalResponseDTO;
 import com.purple_dog.mvp.dto.ProfessionalUpdateDTO;
 import com.purple_dog.mvp.entities.AccountStatus;
 import com.purple_dog.mvp.services.ProfessionalService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Professional Management", description = "APIs for managing professionals")
 @RestController
 @RequestMapping("/professionals")
 @RequiredArgsConstructor
@@ -113,4 +116,3 @@ public class ProfessionalController {
         return ResponseEntity.ok(counts);
     }
 }
-

@@ -1,8 +1,10 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.*;
 import com.purple_dog.mvp.entities.ReviewStatus;
 import com.purple_dog.mvp.services.PlatformReviewService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Platform Review Management", description = "APIs for managing platform reviews")
 @RestController
 @RequestMapping("/platform/reviews")
 @RequiredArgsConstructor
@@ -125,4 +128,3 @@ public class PlatformReviewController {
         return ResponseEntity.ok(stats);
     }
 }
-

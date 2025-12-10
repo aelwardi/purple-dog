@@ -11,11 +11,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Order Management", description = "APIs for managing orders")
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor

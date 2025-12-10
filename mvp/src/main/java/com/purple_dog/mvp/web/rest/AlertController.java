@@ -1,9 +1,10 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.AlertCreateDTO;
 import com.purple_dog.mvp.dto.AlertResponseDTO;
 import com.purple_dog.mvp.dto.AlertUpdateDTO;
 import com.purple_dog.mvp.services.AlertService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Alert Management", description = "APIs for managing user alerts")
 @RestController
 @RequestMapping("/alerts")
 @RequiredArgsConstructor
@@ -105,4 +107,3 @@ public class AlertController {
         return ResponseEntity.ok(count);
     }
 }
-

@@ -11,9 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Plan Management", description = "APIs for managing subscription plans")
 @RestController
 @RequestMapping("/plans")
 @RequiredArgsConstructor
@@ -152,4 +154,3 @@ public class PlanController {
         return ResponseEntity.noContent().build();
     }
 }
-

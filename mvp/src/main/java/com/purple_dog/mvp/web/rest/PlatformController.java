@@ -1,9 +1,11 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.PlatformResponseDTO;
 import com.purple_dog.mvp.dto.PlatformUpdateDTO;
 import com.purple_dog.mvp.entities.PlatformStatus;
 import com.purple_dog.mvp.services.PlatformService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
+@Tag(name = "Platform Management", description = "APIs for managing platform information and settings")
 @RestController
 @RequestMapping("/platform")
 @RequiredArgsConstructor
@@ -72,4 +75,3 @@ public class PlatformController {
         return ResponseEntity.ok().build();
     }
 }
-

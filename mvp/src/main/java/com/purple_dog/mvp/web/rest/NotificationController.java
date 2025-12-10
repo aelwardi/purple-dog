@@ -1,4 +1,4 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.NotificationCreateDTO;
 import com.purple_dog.mvp.dto.NotificationResponseDTO;
@@ -9,9 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Notification Management", description = "APIs for managing user notifications")
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
@@ -121,4 +123,3 @@ public class NotificationController {
         return ResponseEntity.ok(count);
     }
 }
-

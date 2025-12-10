@@ -5,6 +5,8 @@ import com.purple_dog.mvp.dto.SupportTicketResponseDTO;
 import com.purple_dog.mvp.dto.SupportTicketUpdateDTO;
 import com.purple_dog.mvp.entities.TicketStatus;
 import com.purple_dog.mvp.services.SupportTicketService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Support Ticket Management", description = "APIs for managing support tickets")
 @RestController
 @RequestMapping("/support/tickets")
 @RequiredArgsConstructor
@@ -185,4 +188,3 @@ public class SupportTicketController {
         return ResponseEntity.noContent().build();
     }
 }
-
