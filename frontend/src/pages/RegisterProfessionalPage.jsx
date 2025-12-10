@@ -1,25 +1,38 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BuildingOfficeIcon, EnvelopeIcon, MapPinIcon, LockClosedIcon, DocumentTextIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../hooks/useAuth';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
 const RegisterProfessionalPage = () => {
+  const navigate = useNavigate();
+  const { registerProfessional, isAuthenticated } = useAuth();
+  const { showSuccess, handleError } = useErrorHandler();
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     companyName: '',
     siret: '',
     document: null,
-    address: '',
     password: '',
     confirmPassword: '',
     website: '',
     specialties: '',
-    searchedObjects: '',
-    socialMedia: '',
+    bio: '',
+    profilePicture: null,
     cgvAccepted: false,
     mandateAccepted: false,
     newsletter: false,
@@ -27,6 +40,8 @@ const RegisterProfessionalPage = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -53,10 +68,7 @@ const RegisterProfessionalPage = () => {
     if (!formData.companyName.trim()) newErrors.companyName = 'La dénomination est requise';
     if (!formData.siret.trim()) newErrors.siret = 'Le numéro SIRET est requis';
     else if (!/^\d{14}$/.test(formData.siret.replace(/\s/g, ''))) newErrors.siret = 'SIRET invalide (14 chiffres)';
-    if (!formData.document) newErrors.document = 'Un document officiel est requis';
-    if (!formData.address.trim()) newErrors.address = 'L\'adresse est requise';
-    if (!formData.specialties.trim()) newErrors.specialties = 'Les spécialités sont requises';
-    if (!formData.searchedObjects.trim()) newErrors.searchedObjects = 'Les objets recherchés sont requis';
+    if (!formData.phone.trim()) newErrors.phone = 'Le téléphone est requis';
     if (formData.password.length < 8) newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
     if (!formData.cgvAccepted) newErrors.cgvAccepted = 'Vous devez accepter les CGV';
@@ -67,11 +79,40 @@ const RegisterProfessionalPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      // TODO: Implement registration logic
-      console.log('Professional registration data:', formData);
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const registrationData = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        companyName: formData.companyName,
+        siret: formData.siret,
+        website: formData.website || null,
+        specialization: formData.specialties || null,
+        bio: formData.bio || null,
+        profilePicture: previewImage || null,
+      };
+
+      await registerProfessional(registrationData);
+
+      showSuccess('Inscription réussie ! Bienvenue sur Purple Dog 🎉');
+
+      navigate('/dashboard?type=professional');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.errors?.[0] ||
+                          'Une erreur est survenue lors de l\'inscription';
+      handleError(new Error(errorMessage));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

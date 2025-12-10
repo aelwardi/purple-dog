@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PlusIcon, ClipboardDocumentListIcon, UserCircleIcon, ChatBubbleLeftRightIcon, ArrowRightOnRectangleIcon, StarIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { PlusIcon, ClipboardDocumentListIcon, UserCircleIcon, ChatBubbleLeftRightIcon, StarIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../hooks/useAuth';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import ProductListingForm from '../components/products/ProductListingForm';
 
 const DashboardIndividualPage = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { showSuccess, handleError } = useErrorHandler();
   const [activeTab, setActiveTab] = useState('overview');
   const [showListingForm, setShowListingForm] = useState(false);
-  
-  const userEmail = localStorage.getItem('userEmail');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userType');
-    localStorage.removeItem('userEmail');
-    navigate('/login');
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      showSuccess('Déconnexion réussie');
+      navigate('/');
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   const statsCards = [
@@ -45,18 +70,70 @@ const DashboardIndividualPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-display font-bold text-gray-900">
+            <h1 className="text-xl font-semibold text-gray-900">
               Dashboard Particulier
             </h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{userEmail}</span>
-              <Button variant="outline" size="small" onClick={handleLogout}>
-                <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
-                Déconnexion
-              </Button>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUserMenuOpen(!userMenuOpen);
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.firstName} {user?.lastName}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* User Dropdown Menu */}
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-200 animate-fadeIn">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Mon Dashboard
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Mon Profil
+                  </Link>
+                  <hr className="my-2" />
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                    <span>Se déconnecter</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -118,7 +195,11 @@ const DashboardIndividualPage = () => {
                           <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
                           <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                         </div>
-                        <div className={`p-3 bg-${stat.color}-100 rounded-lg text-${stat.color}-600`}>
+                        <div className={`p-3 ${
+                          stat.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                          stat.color === 'green' ? 'bg-green-100 text-green-600' :
+                          'bg-blue-100 text-blue-600'
+                        } rounded-lg`}>
                           {stat.icon}
                         </div>
                       </div>
@@ -128,10 +209,10 @@ const DashboardIndividualPage = () => {
 
                 {/* Quick Actions */}
                 <Card className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <Button 
-                      variant="primary" 
+                    <Button
+                      variant="primary"
                       onClick={() => {
                         setActiveTab('sell');
                         setShowListingForm(true);
@@ -139,15 +220,15 @@ const DashboardIndividualPage = () => {
                       className="h-24 flex flex-col items-center justify-center"
                     >
                       <PlusIcon className="w-8 h-8 mb-2" />
-                      Vendre un nouvel objet
+                      Vendre un objet
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setActiveTab('myObjects')}
                       className="h-24 flex flex-col items-center justify-center"
                     >
                       <ClipboardDocumentListIcon className="w-8 h-8 mb-2" />
-                      Voir mes objets
+                      Mes objets
                     </Button>
                   </div>
                 </Card>
@@ -155,15 +236,19 @@ const DashboardIndividualPage = () => {
                 {/* Welcome Message */}
                 <Card className="p-6 bg-purple-50 border-purple-200">
                   <h3 className="text-lg font-semibold text-purple-900 mb-2">
-                    Bienvenue sur Purple Dog ! 🐕
+                    Bienvenue sur Purple Dog
                   </h3>
                   <p className="text-purple-700 mb-4">
                     Commencez à vendre vos objets de valeur aux professionnels certifiés.
                   </p>
-                  <Button variant="primary" size="small" onClick={() => {
-                    setActiveTab('sell');
-                    setShowListingForm(true);
-                  }}>
+                  <Button
+                    variant="primary"
+                    size="small"
+                    onClick={() => {
+                      setActiveTab('sell');
+                      setShowListingForm(true);
+                    }}
+                  >
                     Mettre en vente mon premier objet
                   </Button>
                 </Card>

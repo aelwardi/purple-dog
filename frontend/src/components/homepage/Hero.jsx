@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
+import RegisterModal from '../auth/RegisterModal';
+import LoginModal from '../auth/LoginModal';
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   // Exemple d'objets pour le carousel (à remplacer par des vraies données)
   const featuredObjects = [
@@ -154,16 +161,36 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/register" className="flex-1">
-                <Button variant="primary" className="w-full" size="large">
-                  Vendre un objet
-                </Button>
-              </Link>
-              <Link to="/search" className="flex-1">
-                <Button variant="secondary" className="w-full" size="large">
-                  Acheter
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/dashboard" className="flex-1">
+                    <Button variant="primary" className="w-full" size="large">
+                      Mon Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/search" className="flex-1">
+                    <Button variant="secondary" className="w-full" size="large">
+                      Explorer les objets
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    className="w-full flex-1"
+                    size="large"
+                    onClick={() => setRegisterModalOpen(true)}
+                  >
+                    Vendre un objet
+                  </Button>
+                  <Link to="/search" className="flex-1">
+                    <Button variant="secondary" className="w-full" size="large">
+                      Acheter
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Stats */}
@@ -184,6 +211,26 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      {/* Register Modal */}
+      <RegisterModal
+        isOpen={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+        onSwitchToLogin={() => {
+          setRegisterModalOpen(false);
+          setLoginModalOpen(true);
+        }}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onSwitchToRegister={() => {
+          setLoginModalOpen(false);
+          setRegisterModalOpen(true);
+        }}
+      />
     </div>
   );
 };

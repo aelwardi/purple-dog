@@ -1,17 +1,27 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../schemas/authSchemas';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { useAuth } from '../hooks/useAuth';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess, handleError } = useErrorHandler();
-  
+  const { login, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const {
     register,
     handleSubmit: handleFormSubmit,
@@ -26,27 +36,24 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Simple authentication logic (remplacer par un vrai appel API)
-      const { email, password } = data;
-      
-      // Simulation d'un délai de requête
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (email === 'particulier@gmail.com' && password === '12345678') {
-        showSuccess('Connexion réussie !');
-        localStorage.setItem('userType', 'individual');
-        localStorage.setItem('userEmail', email);
-        navigate('/dashboard?type=individual');
-      } else if (email === 'professionnel@gmail.com' && password === '12345678') {
-        showSuccess('Connexion réussie !');
-        localStorage.setItem('userType', 'professional');
-        localStorage.setItem('userEmail', email);
-        navigate('/dashboard?type=professional');
+      const response = await login(data);
+
+      showSuccess('Connexion réussie !');
+
+      const from = location.state?.from?.pathname || '/dashboard';
+
+      if (response.user.role === 'INDIVIDUAL') {
+        navigate(from === '/dashboard' ? '/dashboard?type=individual' : from);
+      } else if (response.user.role === 'PROFESSIONAL') {
+        navigate(from === '/dashboard' ? '/dashboard?type=professional' : from);
+      } else if (response.user.role === 'ADMIN') {
+        navigate('/admin/dashboard');
       } else {
-        throw new Error('Email ou mot de passe incorrect');
+        navigate('/dashboard');
       }
     } catch (error) {
-      handleError(error);
+      const errorMessage = error.response?.data?.message || 'Email ou mot de passe incorrect';
+      handleError(new Error(errorMessage));
     }
   };
 

@@ -1,18 +1,32 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserCircleIcon, EnvelopeIcon, MapPinIcon, LockClosedIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../hooks/useAuth';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
 const RegisterIndividualPage = () => {
+  const navigate = useNavigate();
+  const { registerIndividual, isAuthenticated } = useAuth();
+  const { showSuccess, handleError } = useErrorHandler();
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    address: '',
+    phone: '',
     password: '',
     confirmPassword: '',
+    bio: '',
     profilePicture: null,
     ageConfirmation: false,
     newsletter: false,
@@ -21,6 +35,7 @@ const RegisterIndividualPage = () => {
 
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -28,6 +43,9 @@ const RegisterIndividualPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -49,7 +67,7 @@ const RegisterIndividualPage = () => {
     if (!formData.lastName.trim()) newErrors.lastName = 'Le nom est requis';
     if (!formData.email.trim()) newErrors.email = 'L\'email est requis';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email invalide';
-    if (!formData.address.trim()) newErrors.address = 'L\'adresse est requise';
+    if (!formData.phone.trim()) newErrors.phone = 'Le téléphone est requis';
     if (formData.password.length < 8) newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
     if (!formData.ageConfirmation) newErrors.ageConfirmation = 'Vous devez confirmer avoir plus de 18 ans';
@@ -59,11 +77,36 @@ const RegisterIndividualPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      // TODO: Implement registration logic
-      console.log('Registration data:', formData);
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const registrationData = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        bio: formData.bio || null,
+        profilePicture: previewImage || null, // Base64 string
+      };
+
+      await registerIndividual(registrationData);
+
+      showSuccess('Inscription réussie ! Bienvenue sur Purple Dog 🎉');
+
+      navigate('/dashboard?type=individual');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.errors?.[0] ||
+                          'Une erreur est survenue lors de l\'inscription';
+      handleError(new Error(errorMessage));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

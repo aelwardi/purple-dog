@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/errors/ErrorBoundary';
 import ErrorPage from './components/errors/ErrorPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -19,8 +21,9 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Toaster position="top-right" />
-        <Routes>
+        <AuthProvider>
+          <Toaster position="top-right" />
+          <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -31,12 +34,27 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/pricing" element={<PricingPage />} />
         </Route>
-          {/* Dashboard and Feedback routes without MainLayout */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/feedback" element={<FeedbackPage />} />
+          {/* Dashboard and Feedback routes without MainLayout - Protected */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <FeedbackPage />
+              </ProtectedRoute>
+            }
+          />
           {/* 404 Page */}
           <Route path="*" element={<ErrorPage code={404} />} />
-        </Routes>
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
