@@ -5,6 +5,7 @@ import com.purple_dog.mvp.dao.ProfessionalRepository;
 import com.purple_dog.mvp.dto.ProfessionalCreateDTO;
 import com.purple_dog.mvp.dto.ProfessionalResponseDTO;
 import com.purple_dog.mvp.dto.ProfessionalUpdateDTO;
+import com.purple_dog.mvp.dto.RegisterProfessionalDTO;
 import com.purple_dog.mvp.entities.AccountStatus;
 import com.purple_dog.mvp.entities.Professional;
 import com.purple_dog.mvp.entities.UserRole;
@@ -28,32 +29,69 @@ public class ProfessionalService {
     private final ProfessionalRepository professionalRepository;
     private final PersonRepository personRepository;
 
-    public ProfessionalResponseDTO createProfessional(ProfessionalCreateDTO dto) {
-        log.info("Creating professional with email: {}", dto.getEmail());
+    public ProfessionalResponseDTO createProfessional(RegisterProfessionalDTO dto) {
+        log.info("Creating professional from registration with email: {}", dto.getEmail());
 
-        // Vérifier si l'email existe déjà
         if (personRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateResourceException("Email already exists: " + dto.getEmail());
         }
 
-        // Vérifier si le téléphone existe déjà
         if (dto.getPhone() != null && personRepository.existsByPhone(dto.getPhone())) {
             throw new DuplicateResourceException("Phone number already exists: " + dto.getPhone());
         }
 
-        // Vérifier si le SIRET existe déjà
         if (professionalRepository.existsBySiret(dto.getSiret())) {
             throw new DuplicateResourceException("SIRET already exists: " + dto.getSiret());
         }
 
-        // Vérifier si le numéro TVA existe déjà
+        Professional professional = Professional.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword())
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .phone(dto.getPhone())
+                .role(UserRole.PROFESSIONAL)
+                .accountStatus(AccountStatus.PENDING_VERIFICATION)
+                .profilePicture(dto.getProfilePicture())
+                .bio(dto.getBio())
+                .emailVerified(false)
+                .phoneVerified(false)
+                .companyName(dto.getCompanyName())
+                .siret(dto.getSiret())
+                .tvaNumber(dto.getVatNumber())
+                .certified(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Professional saved = professionalRepository.save(professional);
+        log.info("Professional created successfully with ID: {}", saved.getId());
+
+        return mapToResponseDTO(saved);
+    }
+
+    public ProfessionalResponseDTO createProfessional(ProfessionalCreateDTO dto) {
+        log.info("Creating professional with email: {}", dto.getEmail());
+
+        if (personRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateResourceException("Email already exists: " + dto.getEmail());
+        }
+
+        if (dto.getPhone() != null && personRepository.existsByPhone(dto.getPhone())) {
+            throw new DuplicateResourceException("Phone number already exists: " + dto.getPhone());
+        }
+
+        if (professionalRepository.existsBySiret(dto.getSiret())) {
+            throw new DuplicateResourceException("SIRET already exists: " + dto.getSiret());
+        }
+
         if (dto.getTvaNumber() != null && professionalRepository.existsByTvaNumber(dto.getTvaNumber())) {
             throw new DuplicateResourceException("TVA number already exists: " + dto.getTvaNumber());
         }
 
         Professional professional = Professional.builder()
                 .email(dto.getEmail())
-                .password(dto.getPassword()) // TODO: Encoder le mot de passe avec BCrypt
+                .password(dto.getPassword())
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .phone(dto.getPhone())
@@ -219,4 +257,3 @@ public class ProfessionalService {
         return dto;
     }
 }
-

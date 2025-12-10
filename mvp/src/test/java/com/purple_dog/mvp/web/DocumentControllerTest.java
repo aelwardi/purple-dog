@@ -4,14 +4,13 @@ import com.purple_dog.mvp.dto.DocumentResponseDTO;
 import com.purple_dog.mvp.entities.DocumentStatus;
 import com.purple_dog.mvp.entities.DocumentType;
 import com.purple_dog.mvp.services.DocumentService;
-import com.purple_dog.mvp.web.rest.DocumentController;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -22,17 +21,18 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DocumentController.class)
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class DocumentControllerTest {
 
         @Autowired
         private MockMvc mockMvc;
 
-        @Mock
+        @MockBean
         private DocumentService documentService;
 
         @Test
+        @WithMockUser(username = "test@example.com", roles = {"USER"})
         void testGetUserDocuments() throws Exception {
                 DocumentResponseDTO doc1 = DocumentResponseDTO.builder()
                                 .id(1L)
@@ -56,6 +56,7 @@ class DocumentControllerTest {
         }
 
         @Test
+        @WithMockUser(username = "test@example.com", roles = {"USER"})
         void testGetDocumentById() throws Exception {
                 DocumentResponseDTO doc = DocumentResponseDTO.builder()
                                 .id(1L)
@@ -77,6 +78,7 @@ class DocumentControllerTest {
         }
 
         @Test
+        @WithMockUser(username = "admin@example.com", roles = {"ADMIN"})
         void testCountApprovedDocuments() throws Exception {
                 when(documentService.countApprovedDocuments(1L)).thenReturn(5L);
 

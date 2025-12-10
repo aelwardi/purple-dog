@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 
 @RestController
-@RequestMapping("/api/platform")
+@RequestMapping("/platform")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")

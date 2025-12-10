@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/quick-sales")
+@RequestMapping("/quick-sales")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")

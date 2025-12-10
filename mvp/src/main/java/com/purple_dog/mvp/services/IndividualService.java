@@ -5,6 +5,7 @@ import com.purple_dog.mvp.dao.PersonRepository;
 import com.purple_dog.mvp.dto.IndividualCreateDTO;
 import com.purple_dog.mvp.dto.IndividualResponseDTO;
 import com.purple_dog.mvp.dto.IndividualUpdateDTO;
+import com.purple_dog.mvp.dto.RegisterIndividualDTO;
 import com.purple_dog.mvp.entities.AccountStatus;
 import com.purple_dog.mvp.entities.Individual;
 import com.purple_dog.mvp.entities.UserRole;
@@ -27,6 +28,41 @@ public class IndividualService {
 
     private final IndividualRepository individualRepository;
     private final PersonRepository personRepository;
+
+    public IndividualResponseDTO createIndividual(RegisterIndividualDTO dto) {
+        log.info("Creating individual from registration with email: {}", dto.getEmail());
+
+        if (personRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateResourceException("Email already exists: " + dto.getEmail());
+        }
+
+        if (dto.getPhone() != null && personRepository.existsByPhone(dto.getPhone())) {
+            throw new DuplicateResourceException("Phone number already exists: " + dto.getPhone());
+        }
+
+        Individual individual = Individual.builder()
+                .email(dto.getEmail())
+                .password(dto.getPassword()) // Password already hashed in AuthService
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .phone(dto.getPhone())
+                .role(UserRole.INDIVIDUAL)
+                .accountStatus(AccountStatus.ACTIVE) // Auto-activate on registration
+                .profilePicture(dto.getProfilePicture())
+                .bio(dto.getBio())
+                .emailVerified(false)
+                .phoneVerified(false)
+                .identityVerified(false)
+                .maxSalesPerMonth(10)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Individual saved = individualRepository.save(individual);
+        log.info("Individual created successfully with ID: {}", saved.getId());
+
+        return mapToResponseDTO(saved);
+    }
 
     public IndividualResponseDTO createIndividual(IndividualCreateDTO dto) {
         log.info("Creating individual with email: {}", dto.getEmail());
@@ -176,4 +212,3 @@ public class IndividualService {
         return dto;
     }
 }
-

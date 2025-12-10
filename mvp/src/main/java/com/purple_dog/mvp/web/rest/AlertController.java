@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/alerts")
+@RequestMapping("/alerts")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")

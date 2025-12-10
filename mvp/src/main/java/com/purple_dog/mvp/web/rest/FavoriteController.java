@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/favorites")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
