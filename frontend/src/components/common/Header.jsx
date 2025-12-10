@@ -4,6 +4,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Logo from './Logo';
 import Button from './Button';
 import RegisterTypeModal from '../auth/RegisterTypeModal';
+import SearchBar from '../search/SearchBar';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,11 +13,16 @@ const Header = () => {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-20 gap-4">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
             <Logo size="normal" />
           </Link>
+
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-2xl">
+            <SearchBar />
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
@@ -80,6 +86,10 @@ const Header = () => {
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
+            {/* Search Bar - Mobile */}
+            <div className="mb-4">
+              <SearchBar />
+            </div>
             <div className="flex flex-col space-y-4">
               <Link 
                 to="/search" 
