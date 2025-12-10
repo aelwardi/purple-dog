@@ -29,12 +29,11 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     List<Person> findByRoleAndAccountStatus(UserRole role, AccountStatus status);
 
     @Query("SELECT p FROM Person p WHERE LOWER(p.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(p.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(p.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "OR LOWER(p.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(p.email) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Person> searchByKeyword(@Param("keyword") String keyword);
 
     long countByRole(UserRole role);
 
     long countByAccountStatus(AccountStatus status);
 }
-

@@ -13,9 +13,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class DocumentUploadDTO {
 
+    private String fileName;
+    private String fileUrl;
+
     @NotNull(message = "Document type is required")
     private DocumentType documentType;
 
     private String description;
 }
-
