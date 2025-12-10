@@ -1,36 +1,52 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema } from '../schemas/authSchemas';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+  const { showSuccess, handleError } = useErrorHandler();
+  
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Simple authentication logic
-    const { email, password } = formData;
-    
-    if (email === 'particulier@gmail.com' && password === '1234') {
-      toast.success('Connexion réussie !');
-      // Store user type in localStorage for dashboard access
-      localStorage.setItem('userType', 'individual');
-      localStorage.setItem('userEmail', email);
-      navigate('/dashboard?type=individual');
-    } else if (email === 'professionnel@gmail.com' && password === '1234') {
-      toast.success('Connexion réussie !');
-      localStorage.setItem('userType', 'professional');
-      localStorage.setItem('userEmail', email);
-      navigate('/dashboard?type=professional');
-    } else {
-      toast.error('Email ou mot de passe incorrect');
+  const onSubmit = async (data) => {
+    try {
+      // Simple authentication logic (remplacer par un vrai appel API)
+      const { email, password } = data;
+      
+      // Simulation d'un délai de requête
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (email === 'particulier@gmail.com' && password === '12345678') {
+        showSuccess('Connexion réussie !');
+        localStorage.setItem('userType', 'individual');
+        localStorage.setItem('userEmail', email);
+        navigate('/dashboard?type=individual');
+      } else if (email === 'professionnel@gmail.com' && password === '12345678') {
+        showSuccess('Connexion réussie !');
+        localStorage.setItem('userType', 'professional');
+        localStorage.setItem('userEmail', email);
+        navigate('/dashboard?type=professional');
+      } else {
+        throw new Error('Email ou mot de passe incorrect');
+      }
+    } catch (error) {
+      handleError(error);
     }
   };
 
@@ -47,23 +63,23 @@ const LoginPage = () => {
         </div>
 
         <Card>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleFormSubmit(onSubmit)} className="space-y-6">
             <Input
               label="Email"
               type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              {...register('email')}
+              error={errors.email?.message}
               placeholder="votre@email.com"
+              disabled={isSubmitting}
             />
 
             <Input
               label="Mot de passe"
               type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              {...register('password')}
+              error={errors.password?.message}
               placeholder="••••••••"
+              disabled={isSubmitting}
             />
 
             <div className="flex items-center justify-between">
@@ -76,8 +92,13 @@ const LoginPage = () => {
               </Link>
             </div>
 
-            <Button type="submit" variant="primary" className="w-full">
-              Se connecter
+            <Button 
+              type="submit" 
+              variant="primary" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>
 
@@ -92,8 +113,8 @@ const LoginPage = () => {
 
           <div className="mt-4 p-4 bg-purple-50 rounded-lg">
             <p className="text-xs text-purple-900 font-semibold mb-2">Comptes de test :</p>
-            <p className="text-xs text-purple-700">Particulier: particulier@gmail.com / 1234</p>
-            <p className="text-xs text-purple-700">Professionnel: professionnel@gmail.com / 1234</p>
+            <p className="text-xs text-purple-700">Particulier: particulier@gmail.com / 12345678</p>
+            <p className="text-xs text-purple-700">Professionnel: professionnel@gmail.com / 12345678</p>
           </div>
         </Card>
       </div>
