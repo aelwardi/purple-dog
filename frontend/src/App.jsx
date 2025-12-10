@@ -10,15 +10,7 @@ import ContactPage from './pages/ContactPage';
 import DashboardPage from './pages/DashboardPage';
 import PricingPage from './pages/PricingPage';
 import FeedbackPage from './pages/FeedbackPage';
-
-const SearchPage = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div className="text-center">
-      <h1 className="text-4xl font-display font-bold text-gray-900 mb-4">Recherche</h1>
-      <p className="text-gray-600">Page en construction</p>
-    </div>
-  </div>
-);
+import SearchPage from './pages/SearchPage';
 
 function App() {
   return (
