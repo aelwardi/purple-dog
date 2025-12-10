@@ -29,16 +29,13 @@ public class Bid {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private BidStatus status = BidStatus.ACTIVE;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal maxAmount; // Pour enchères automatiques
 
     private Boolean isAutoBid = false;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal maxAutoBidAmount;
+    @Column(name = "bid_date")
+    private LocalDateTime bidDate = LocalDateTime.now();
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Boolean isWinning = false;
 }
-

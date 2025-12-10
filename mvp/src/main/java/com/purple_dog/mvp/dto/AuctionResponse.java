@@ -1,5 +1,6 @@
 package com.purple_dog.mvp.dto;
 
+import com.purple_dog.mvp.entities.AuctionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,9 +20,8 @@ public class AuctionResponse {
     private BigDecimal bidIncrement;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private Boolean isActive;
+    private AuctionStatus status;
     private Boolean reservePriceMet;
-    private Long currentWinnerId;
+    private Long winnerId;
     private Integer totalBids;
-    private LocalDateTime createdAt;
 }

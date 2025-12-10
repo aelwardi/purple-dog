@@ -42,18 +42,18 @@ public class Auction {
     @Column(nullable = false)
     private LocalDateTime endDate;
 
-    private Boolean isActive = true;
+    @Enumerated(EnumType.STRING)
+    private AuctionStatus status = AuctionStatus.PENDING;
+
+    private Boolean isAutoExtendEnabled = true; // Extension de 10min si enchère à h-1
 
     private Boolean reservePriceMet = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_winner_id")
-    private Person currentWinner;
+    @JoinColumn(name = "winner_id")
+    private Professional winner;
 
     private Integer totalBids = 0;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     // Relations
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -62,4 +62,3 @@ public class Auction {
     @OneToOne(mappedBy = "auction")
     private Order order;
 }
-

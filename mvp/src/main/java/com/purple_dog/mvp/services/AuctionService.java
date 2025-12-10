@@ -5,6 +5,7 @@ import com.purple_dog.mvp.dto.AuctionDTO;
 import com.purple_dog.mvp.dto.AuctionResponse;
 import com.purple_dog.mvp.dto.CreateAuctionRequest;
 import com.purple_dog.mvp.entities.Auction;
+import com.purple_dog.mvp.entities.AuctionStatus;
 import com.purple_dog.mvp.entities.Product;
 import com.purple_dog.mvp.exceptions.AuctionException;
 import lombok.RequiredArgsConstructor;
@@ -82,9 +83,10 @@ public class AuctionService {
         auction.setStartDate(now);
         auction.setEndDate(now.plusDays(DEFAULT_AUCTION_DURATION_DAYS));
 
-        auction.setIsActive(true);
+        auction.setStatus(AuctionStatus.ACTIVE);
         auction.setReservePriceMet(false);
         auction.setTotalBids(0);
+        auction.setIsAutoExtendEnabled(true);
 
         Auction saved = auctionRepository.save(auction);
         return convertToResponse(saved);
@@ -133,9 +135,10 @@ public class AuctionService {
         auction.setStartDate(now);
         auction.setEndDate(now.plusDays(DEFAULT_AUCTION_DURATION_DAYS));
 
-        auction.setIsActive(true);
+        auction.setStatus(AuctionStatus.ACTIVE);
         auction.setReservePriceMet(false);
         auction.setTotalBids(0);
+        auction.setIsAutoExtendEnabled(true);
 
         return auctionRepository.save(auction);
     }
@@ -203,11 +206,18 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new AuctionException("Auction not found with id: " + id));
 
-        if (!auction.getIsActive()) {
+        if (auction.getStatus() == AuctionStatus.ENDED ||
+                auction.getStatus() == AuctionStatus.SOLD ||
+                auction.getStatus() == AuctionStatus.UNSOLD) {
             throw new AuctionException("Auction is already closed");
         }
 
-        auction.setIsActive(false);
+        // Déterminer le statut final
+        if (auction.getReservePriceMet()) {
+            auction.setStatus(AuctionStatus.SOLD);
+        } else {
+            auction.setStatus(AuctionStatus.UNSOLD);
+        }
         auctionRepository.save(auction);
     }
 
@@ -254,10 +264,9 @@ public class AuctionService {
                 auction.getBidIncrement(),
                 auction.getStartDate(),
                 auction.getEndDate(),
-                auction.getIsActive(),
+                auction.getStatus(),
                 auction.getReservePriceMet(),
-                auction.getCurrentWinner() != null ? auction.getCurrentWinner().getId() : null,
-                auction.getTotalBids(),
-                auction.getCreatedAt());
+                auction.getWinner() != null ? auction.getWinner().getId() : null,
+                auction.getTotalBids());
     }
 }
