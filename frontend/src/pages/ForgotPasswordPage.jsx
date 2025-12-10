@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { forgotPasswordSchema } from '../schemas/authSchemas';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { authService } from '../services';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
@@ -29,11 +30,7 @@ const ForgotPasswordPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Simulation d'un appel API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simuler l'envoi d'email (remplacer par authApi.forgotPassword(data.email))
-      console.log('Reset email sent to:', data.email);
+      await authService.forgotPassword(data.email);
       
       setEmailSent(true);
       showSuccess('Un email de réinitialisation a été envoyé !');

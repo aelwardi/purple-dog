@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../schemas/authSchemas';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { authService } from '../services';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
@@ -26,24 +27,17 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Simple authentication logic (remplacer par un vrai appel API)
-      const { email, password } = data;
+      const response = await authService.login(data);
       
-      // Simulation d'un délai de requête
-      await new Promise(resolve => setTimeout(resolve, 500));
+      showSuccess('Connexion réussie !');
       
-      if (email === 'particulier@gmail.com' && password === '12345678') {
-        showSuccess('Connexion réussie !');
-        localStorage.setItem('userType', 'individual');
-        localStorage.setItem('userEmail', email);
+      // Redirection selon le type d'utilisateur
+      if (response.userType === 'INDIVIDUAL') {
         navigate('/dashboard?type=individual');
-      } else if (email === 'professionnel@gmail.com' && password === '12345678') {
-        showSuccess('Connexion réussie !');
-        localStorage.setItem('userType', 'professional');
-        localStorage.setItem('userEmail', email);
+      } else if (response.userType === 'PROFESSIONAL') {
         navigate('/dashboard?type=professional');
       } else {
-        throw new Error('Email ou mot de passe incorrect');
+        navigate('/dashboard');
       }
     } catch (error) {
       handleError(error);

@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserCircleIcon, EnvelopeIcon, MapPinIcon, LockClosedIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import { authService } from '../services';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
 const RegisterIndividualPage = () => {
+  const navigate = useNavigate();
+  const { showSuccess, handleError } = useErrorHandler();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -59,11 +65,34 @@ const RegisterIndividualPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      // TODO: Implement registration logic
-      console.log('Registration data:', formData);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Préparer les données pour l'API
+      const registrationData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        address: formData.address,
+        newsletter: formData.newsletter,
+      };
+
+      await authService.registerIndividual(registrationData);
+      
+      showSuccess('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+      navigate('/login');
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,8 +260,14 @@ const RegisterIndividualPage = () => {
             </div>
 
             {/* Submit button */}
-            <Button type="submit" variant="primary" className="w-full" size="large">
-              Créer mon compte
+            <Button 
+              type="submit" 
+              variant="primary" 
+              className="w-full" 
+              size="large"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Création en cours...' : 'Créer mon compte'}
             </Button>
 
             <p className="text-sm text-gray-600 text-center">
