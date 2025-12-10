@@ -1,4 +1,4 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.AddressCreateDTO;
 import com.purple_dog.mvp.dto.AddressResponseDTO;
