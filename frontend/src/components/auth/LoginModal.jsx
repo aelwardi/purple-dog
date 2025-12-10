@@ -15,7 +15,7 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
 });
 
-const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
+const LoginModal = ({ isOpen, onClose, onSwitchToRegister, onOpenForgotPassword }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showSuccess, handleError } = useErrorHandler();
@@ -102,7 +102,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
               className="text-sm text-purple-600 hover:text-purple-700"
               onClick={() => {
                 onClose();
-                navigate('/forgot-password');
+                onOpenForgotPassword();
               }}
             >
               Mot de passe oublié ?

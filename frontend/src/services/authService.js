@@ -64,6 +64,27 @@ const authService = {
       localStorage.removeItem('user');
     }
   },
+
+  /**
+   * Request password reset
+   * @param {string} email - User email
+   * @returns {Promise<Object>} Response with message
+   */
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  /**
+   * Reset password with token
+   * @param {string} token - Reset token
+   * @param {string} newPassword - New password
+   * @returns {Promise<Object>} Response with message
+   */
+  resetPassword: async (token, newPassword) => {
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
 };
 
 export default authService;
