@@ -7,9 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Favorite Management", description = "APIs for managing user favorites")
 @RestController
 @RequestMapping("/favorites")
 @RequiredArgsConstructor
@@ -98,4 +100,3 @@ public class FavoriteController {
         return ResponseEntity.noContent().build();
     }
 }
-

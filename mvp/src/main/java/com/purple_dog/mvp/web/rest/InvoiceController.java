@@ -12,10 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Tag(name = "Invoice Management", description = "APIs for managing invoices")
 @RestController
 @RequestMapping("/invoices")
 @RequiredArgsConstructor

@@ -1,4 +1,5 @@
 package com.purple_dog.mvp.web.rest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.purple_dog.mvp.dto.AuctionDTO;
 import com.purple_dog.mvp.dto.AuctionResponse;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Auction Management", description = "APIs for managing auctions")
 @RestController
 @RequestMapping("/auctions")
 @RequiredArgsConstructor

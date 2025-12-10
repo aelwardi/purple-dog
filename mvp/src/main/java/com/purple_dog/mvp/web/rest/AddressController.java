@@ -1,4 +1,5 @@
 package com.purple_dog.mvp.web.rest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.purple_dog.mvp.dto.AddressCreateDTO;
 import com.purple_dog.mvp.dto.AddressResponseDTO;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Address Management", description = "APIs for managing user addresses")
 @RestController
 @RequestMapping("/addresses")
 @RequiredArgsConstructor

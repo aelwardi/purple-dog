@@ -1,4 +1,4 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.*;
 import com.purple_dog.mvp.services.AuthService;
@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Authentication", description = "APIs for user authentication and registration")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -84,4 +86,3 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 }
-

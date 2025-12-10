@@ -6,6 +6,8 @@ import com.purple_dog.mvp.entities.AccountStatus;
 import com.purple_dog.mvp.entities.Person;
 import com.purple_dog.mvp.entities.UserRole;
 import com.purple_dog.mvp.exceptions.ResourceNotFoundException;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Tag(name = "User Management", description = "APIs for managing users")
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -136,4 +139,3 @@ public class UserController {
         return dto;
     }
 }
-
