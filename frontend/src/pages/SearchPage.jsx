@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { mockProducts } from '../data/mockProducts';
+import { productService } from '../services';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -10,6 +11,7 @@ const SearchPage = () => {
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
     if (!query.trim()) {
@@ -17,19 +19,21 @@ const SearchPage = () => {
       return;
     }
 
-    setIsLoading(true);
-    // Simuler un délai de recherche
-    const timer = setTimeout(() => {
-      const filtered = mockProducts.filter(product => 
-        product.title.toLowerCase().includes(query.toLowerCase()) ||
-        product.description.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase())
-      );
-      setResults(filtered);
-      setIsLoading(false);
-    }, 300);
+    const searchProducts = async () => {
+      setIsLoading(true);
+      try {
+        // Appel API réel au backend
+        const data = await productService.search({ keyword: query });
+        setResults(data);
+      } catch (error) {
+        handleError(error);
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    searchProducts();
   }, [query]);
 
   return (
@@ -114,7 +118,7 @@ const SearchPage = () => {
                 )}
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                    {product.title}
+                    {product.name || product.title}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {product.description}
@@ -125,13 +129,15 @@ const SearchPage = () => {
                         {product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
                       </p>
                     )}
-                    <Badge variant={
-                      product.condition === 'Excellent' ? 'success' : 
-                      product.condition === 'Très bon' ? 'info' : 
-                      'secondary'
-                    }>
-                      {product.condition}
-                    </Badge>
+                    {product.condition && (
+                      <Badge variant={
+                        product.condition === 'Excellent' ? 'success' : 
+                        product.condition === 'Très bon' ? 'info' : 
+                        'secondary'
+                      }>
+                        {product.condition}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </Card>

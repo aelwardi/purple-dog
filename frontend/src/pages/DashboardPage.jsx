@@ -1,24 +1,36 @@
 import React from 'react';
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import DashboardIndividualPage from './DashboardIndividualPage';
 import DashboardProfessionalPage from './DashboardProfessionalPage';
 
 const DashboardPage = () => {
-  const [searchParams] = useSearchParams();
-  const type = searchParams.get('type');
+  const { user, loading } = useAuth();
 
-  // Redirect to login if no type specified
-  if (!type) {
+  // Afficher loader pendant chargement
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Rediriger vers login si pas d'utilisateur
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Render the appropriate dashboard based on type
-  if (type === 'individual') {
+  // Render le dashboard approprié selon le type d'utilisateur
+  if (user.userType === 'INDIVIDUAL') {
     return <DashboardIndividualPage />;
-  } else if (type === 'professional') {
+  } else if (user.userType === 'PROFESSIONAL') {
     return <DashboardProfessionalPage />;
   } else {
-    // Invalid type, redirect to login
+    // Type invalide, rediriger vers login
     return <Navigate to="/login" replace />;
   }
 };

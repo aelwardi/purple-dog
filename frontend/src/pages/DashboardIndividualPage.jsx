@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon, ClipboardDocumentListIcon, UserCircleIcon, ChatBubbleLeftRightIcon, ArrowRightOnRectangleIcon, StarIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import { productService, individualService } from '../services';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import ProductListingForm from '../components/products/ProductListingForm';
