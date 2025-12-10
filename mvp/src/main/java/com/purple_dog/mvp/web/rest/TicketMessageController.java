@@ -3,6 +3,8 @@ package com.purple_dog.mvp.web.rest;
 import com.purple_dog.mvp.dto.TicketMessageCreateDTO;
 import com.purple_dog.mvp.dto.TicketMessageDTO;
 import com.purple_dog.mvp.services.TicketMessageService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Ticket Message Management", description = "APIs for managing ticket messages")
 @RestController
 @RequestMapping("/support/messages")
 @RequiredArgsConstructor
@@ -113,4 +116,3 @@ public class TicketMessageController {
         return message != null ? ResponseEntity.ok(message) : ResponseEntity.noContent().build();
     }
 }
-

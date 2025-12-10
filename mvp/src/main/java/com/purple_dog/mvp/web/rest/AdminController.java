@@ -1,4 +1,5 @@
 package com.purple_dog.mvp.web.rest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.purple_dog.mvp.dto.AdminCreateDTO;
 import com.purple_dog.mvp.dto.AdminResponseDTO;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Admin Management", description = "APIs for managing admin users")
 @RestController
 @RequestMapping("/admins")
 @RequiredArgsConstructor

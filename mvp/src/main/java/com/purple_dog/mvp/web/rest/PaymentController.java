@@ -5,6 +5,8 @@ import com.purple_dog.mvp.dto.PaymentResponseDTO;
 import com.purple_dog.mvp.dto.RefundRequestDTO;
 import com.purple_dog.mvp.entities.PaymentStatus;
 import com.purple_dog.mvp.services.PaymentService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Tag(name = "Payment Management", description = "APIs for managing payments")
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
@@ -140,4 +143,3 @@ public class PaymentController {
         return ResponseEntity.ok(count);
     }
 }
-

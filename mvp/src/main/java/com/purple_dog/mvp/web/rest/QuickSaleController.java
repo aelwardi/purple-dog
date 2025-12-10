@@ -1,9 +1,11 @@
-package com.purple_dog.mvp.web;
+package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.QuickSaleCreateDTO;
 import com.purple_dog.mvp.dto.QuickSaleResponseDTO;
 import com.purple_dog.mvp.dto.QuickSaleUpdateDTO;
 import com.purple_dog.mvp.services.QuickSaleService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Tag(name = "Quick Sale Management", description = "APIs for managing quick sales")
 @RestController
 @RequestMapping("/quick-sales")
 @RequiredArgsConstructor
@@ -146,4 +149,3 @@ public class QuickSaleController {
         return ResponseEntity.ok(count);
     }
 }
-
