@@ -165,11 +165,15 @@ const DashboardProfessionalPage = () => {
                   <button
                     key={item.id}
                     onClick={() => {
-                      setActiveTab(item.id);
-                      if (item.id === 'sell') {
-                        setShowListingForm(true);
+                      if (item.id === 'profile') {
+                        navigate('/profile');
                       } else {
-                        setShowListingForm(false);
+                        setActiveTab(item.id);
+                        if (item.id === 'sell') {
+                          setShowListingForm(true);
+                        } else {
+                          setShowListingForm(false);
+                        }
                       }
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -387,8 +391,8 @@ const DashboardProfessionalPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                     <input 
                       type="email" 
-                      value={userEmail} 
-                      disabled 
+                      value={user?.email || ''}
+                      disabled
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
                     />
                   </div>
