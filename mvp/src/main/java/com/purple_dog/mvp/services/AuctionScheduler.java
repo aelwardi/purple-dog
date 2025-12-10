@@ -2,6 +2,7 @@ package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.dao.AuctionRepository;
 import com.purple_dog.mvp.entities.Auction;
+import com.purple_dog.mvp.entities.AuctionStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,12 +32,19 @@ public class AuctionScheduler {
         List<Auction> auctions = auctionRepository.findAll();
 
         auctions.stream()
-                .filter(Auction::getIsActive)
+                .filter(a -> a.getStatus() == AuctionStatus.ACTIVE || a.getStatus() == AuctionStatus.EXTENDED)
                 .filter(a -> a.getEndDate().isBefore(now))
                 .forEach(auction -> {
-                    auction.setIsActive(false);
+                    // Déterminer le statut final
+                    if (auction.getReservePriceMet()) {
+                        auction.setStatus(AuctionStatus.SOLD);
+                        log.info("Auction {} has been automatically closed and SOLD", auction.getId());
+                    } else {
+                        auction.setStatus(AuctionStatus.UNSOLD);
+                        log.info("Auction {} has been automatically closed and UNSOLD (reserve price not met)",
+                                auction.getId());
+                    }
                     auctionRepository.save(auction);
-                    log.info("Auction {} has been automatically closed", auction.getId());
                 });
 
         log.info("Scheduled task to close expired auctions completed");

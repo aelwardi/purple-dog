@@ -27,13 +27,13 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     /**
      * Récupère les enchères actives
      */
-    @Query("SELECT a FROM Auction a WHERE a.isActive = true AND a.endDate > CURRENT_TIMESTAMP")
+    @Query("SELECT a FROM Auction a WHERE (a.status = 'ACTIVE' OR a.status = 'EXTENDED') AND a.endDate > CURRENT_TIMESTAMP")
     List<Auction> findActiveAuctions();
 
     /**
      * Récupère les enchères terminées
      */
-    @Query("SELECT a FROM Auction a WHERE a.isActive = false OR a.endDate <= CURRENT_TIMESTAMP")
+    @Query("SELECT a FROM Auction a WHERE (a.status = 'ENDED' OR a.status = 'SOLD' OR a.status = 'UNSOLD') OR a.endDate <= CURRENT_TIMESTAMP")
     List<Auction> findClosedAuctions();
 
     /**
