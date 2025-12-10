@@ -7,6 +7,7 @@ import Logo from './Logo';
 import Button from './Button';
 import LoginModal from '../auth/LoginModal';
 import RegisterModal from '../auth/RegisterModal';
+import ForgotPasswordModal from '../auth/ForgotPasswordModal';
 import SearchBar from '../search/SearchBar';
 
 const Header = () => {
@@ -16,6 +17,7 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -295,6 +297,10 @@ const Header = () => {
           setLoginModalOpen(false);
           setRegisterModalOpen(true);
         }}
+        onOpenForgotPassword={() => {
+          setLoginModalOpen(false);
+          setForgotPasswordModalOpen(true);
+        }}
       />
 
       {/* Register Modal */}
@@ -303,6 +309,16 @@ const Header = () => {
         onClose={() => setRegisterModalOpen(false)}
         onSwitchToLogin={() => {
           setRegisterModalOpen(false);
+          setLoginModalOpen(true);
+        }}
+      />
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={forgotPasswordModalOpen}
+        onClose={() => setForgotPasswordModalOpen(false)}
+        onBackToLogin={() => {
+          setForgotPasswordModalOpen(false);
           setLoginModalOpen(true);
         }}
       />

@@ -2,10 +2,12 @@ package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.config.JwtTokenProvider;
 import com.purple_dog.mvp.dao.PersonRepository;
+import com.purple_dog.mvp.dao.PasswordResetTokenRepository;
 import com.purple_dog.mvp.dto.*;
 import com.purple_dog.mvp.entities.*;
 import com.purple_dog.mvp.exceptions.DuplicateResourceException;
 import com.purple_dog.mvp.exceptions.InvalidOperationException;
+import com.purple_dog.mvp.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +36,17 @@ public class AuthService {
     private final IndividualService individualService;
     private final ProfessionalService professionalService;
     private final CustomUserDetailsService userDetailsService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailSenderService emailSenderService;
 
     @Value("${jwt.expiration}")
     private long jwtExpirationMs;
+
+    @Value("${app.password-reset.expiration:3600000}") // 1 hour default
+    private long passwordResetExpirationMs;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     public LoginResponseDTO login(LoginRequestDTO request) {
         log.info("Login attempt for email: {}", request.getEmail());
@@ -205,6 +216,74 @@ public class AuthService {
     public void logout() {
         SecurityContextHolder.clearContext();
         log.info("User logged out");
+    }
+
+    public void forgotPassword(String email) {
+        log.info("Forgot password request for email: {}", email);
+
+        Person person = personRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun compte trouvé avec cet email"));
+
+        // Delete any existing tokens for this user
+        passwordResetTokenRepository.deleteByPerson(person);
+
+        // Generate unique token
+        String token = UUID.randomUUID().toString();
+
+        // Create and save token
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .person(person)
+                .expiryDate(LocalDateTime.now().plusSeconds(passwordResetExpirationMs / 1000))
+                .used(false)
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        // Send email with reset link
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
+
+        String emailSubject = "Réinitialisation de votre mot de passe - Purple Dog";
+        String emailText = String.format(
+            "Bonjour %s,\n\n" +
+            "Vous avez demandé la réinitialisation de votre mot de passe.\n\n" +
+            "Cliquez sur le lien suivant pour réinitialiser votre mot de passe :\n%s\n\n" +
+            "Ce lien expirera dans 1 heure.\n\n" +
+            "Si vous n'avez pas fait cette demande, ignorez cet email.\n\n" +
+            "Cordialement,\n" +
+            "L'équipe Purple Dog",
+            person.getFirstName(), resetLink
+        );
+
+        emailSenderService.sendSimpleEmail(person.getEmail(), emailSubject, emailText);
+
+        log.info("Password reset email sent to: {}", email);
+    }
+
+    public void resetPassword(String token, String newPassword) {
+        log.info("Reset password request with token");
+
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidOperationException("Token invalide ou expiré"));
+
+        if (resetToken.getUsed()) {
+            throw new InvalidOperationException("Ce lien a déjà été utilisé");
+        }
+
+        if (resetToken.isExpired()) {
+            throw new InvalidOperationException("Ce lien a expiré");
+        }
+
+        // Update password
+        Person person = resetToken.getPerson();
+        person.setPassword(passwordEncoder.encode(newPassword));
+        personRepository.save(person);
+
+        // Mark token as used
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        log.info("Password reset successfully for user: {}", person.getEmail());
     }
 
     private UserInfoDTO mapPersonToUserInfo(Person person) {

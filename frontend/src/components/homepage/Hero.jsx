@@ -6,6 +6,7 @@ import Button from '../common/Button';
 import Badge from '../common/Badge';
 import RegisterModal from '../auth/RegisterModal';
 import LoginModal from '../auth/LoginModal';
+import ForgotPasswordModal from '../auth/ForgotPasswordModal';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
 
   // Exemple d'objets pour le carousel (à remplacer par des vraies données)
   const featuredObjects = [
@@ -229,6 +231,20 @@ const Hero = () => {
         onSwitchToRegister={() => {
           setLoginModalOpen(false);
           setRegisterModalOpen(true);
+        }}
+        onOpenForgotPassword={() => {
+          setLoginModalOpen(false);
+          setForgotPasswordModalOpen(true);
+        }}
+      />
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={forgotPasswordModalOpen}
+        onClose={() => setForgotPasswordModalOpen(false)}
+        onBackToLogin={() => {
+          setForgotPasswordModalOpen(false);
+          setLoginModalOpen(true);
         }}
       />
     </div>
