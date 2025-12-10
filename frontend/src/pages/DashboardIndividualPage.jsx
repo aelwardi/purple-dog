@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon, ClipboardDocumentListIcon, UserCircleIcon, ChatBubbleLeftRightIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ClipboardDocumentListIcon, UserCircleIcon, ChatBubbleLeftRightIcon, ArrowRightOnRectangleIcon, StarIcon } from '@heroicons/react/24/outline';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import ProductListingForm from '../components/products/ProductListingForm';
@@ -30,6 +30,10 @@ const DashboardIndividualPage = () => {
     { id: 'myObjects', label: 'Mes objets', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
     { id: 'profile', label: 'Mon profil', icon: <UserCircleIcon className="w-5 h-5" /> },
   ];
+
+  const handleFeedbackClick = () => {
+    navigate('/feedback');
+  };
 
   const handleProductSubmit = (formData) => {
     console.log('Product listing:', formData);
@@ -86,6 +90,18 @@ const DashboardIndividualPage = () => {
                   </button>
                 ))}
               </nav>
+
+              {/* Feedback Button */}
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                  onClick={handleFeedbackClick}
+                >
+                  <StarIcon className="w-5 h-5" />
+                  Donner mon avis
+                </Button>
+              </div>
             </Card>
           </div>
 
