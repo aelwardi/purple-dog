@@ -215,20 +215,6 @@ public class ProductService {
                 .map(p -> new PhotoResponse(p.getId(), p.getUrl(), p.getDisplayOrder(), p.getIsPrimary()))
                 .collect(Collectors.toList());
 
-        // private Long id;
-        // private Long personId;
-        // private DocumentType documentType;
-        // private String fileName;
-        // private String fileUrl;
-        // private String fileType;
-        // private Long fileSize;
-        // private String description;
-        // private DocumentStatus status;
-        // private String rejectionReason;
-        // private LocalDateTime verifiedAt;
-        // private Long verifiedById;
-        // private String verifiedByName;
-        // private LocalDateTime uploadedAt;
         List<DocumentResponseDTO> docs = product.getDocuments().stream()
                 .map(d -> new DocumentResponseDTO(
                         d.getId(),
