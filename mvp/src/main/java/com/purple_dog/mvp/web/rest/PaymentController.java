@@ -1,143 +1,110 @@
 package com.purple_dog.mvp.web.rest;
 
-import com.purple_dog.mvp.dto.PaymentCreateDTO;
-import com.purple_dog.mvp.dto.PaymentResponseDTO;
-import com.purple_dog.mvp.dto.RefundRequestDTO;
-import com.purple_dog.mvp.entities.PaymentStatus;
-import com.purple_dog.mvp.services.PaymentService;
+import com.purple_dog.mvp.dto.*;
+import com.purple_dog.mvp.services.StripeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+@Tag(name = "Payment", description = "Payment management with Stripe v31.0.0")
+@SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
-    private final PaymentService paymentService;
+    private final StripeService stripeService;
 
     /**
-     * Créer un paiement
+     * Create a payment intent
+     * POST /api/payments/create-intent
      */
-    @PostMapping
-    public ResponseEntity<PaymentResponseDTO> createPayment(@Valid @RequestBody PaymentCreateDTO dto) {
-        log.info("Request to create payment for order: {}", dto.getOrderId());
-        PaymentResponseDTO response = paymentService.createPayment(dto);
+    @PostMapping("/create-intent")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'PROFESSIONAL', 'ADMIN')")
+    @Operation(summary = "Create a payment intent", description = "Create a Stripe payment intent for processing payment")
+    public ResponseEntity<PaymentIntentResponseDTO> createPaymentIntent(@Valid @RequestBody CreatePaymentIntentDTO request) {
+        log.info("Creating payment intent for amount: {} {}", request.getAmount(), request.getCurrency());
+        PaymentIntentResponseDTO response = stripeService.createPaymentIntent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * Traiter un paiement
+     * Confirm a payment
+     * POST /api/payments/confirm
      */
-    @PostMapping("/{paymentId}/process")
-    public ResponseEntity<PaymentResponseDTO> processPayment(
-            @PathVariable Long paymentId,
-            @RequestParam(required = false) String stripeToken) {
-
-        log.info("Request to process payment: {}", paymentId);
-        PaymentResponseDTO response = paymentService.processPayment(paymentId, stripeToken);
+    @PostMapping("/confirm")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'PROFESSIONAL', 'ADMIN')")
+    @Operation(summary = "Confirm a payment", description = "Confirm a payment after processing by Stripe")
+    public ResponseEntity<PaymentResponseDTO> confirmPayment(@Valid @RequestBody ConfirmPaymentDTO request) {
+        log.info("Confirming payment: {}", request.getPaymentIntentId());
+        PaymentResponseDTO response = stripeService.confirmPayment(request);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Récupérer un paiement par ID
+     * Get payment by ID
+     * GET /api/payments/{id}
      */
-    @GetMapping("/{paymentId}")
-    public ResponseEntity<PaymentResponseDTO> getPaymentById(@PathVariable Long paymentId) {
-        log.info("Request to get payment: {}", paymentId);
-        PaymentResponseDTO payment = paymentService.getPaymentById(paymentId);
-        return ResponseEntity.ok(payment);
-    }
-
-    /**
-     * Récupérer le paiement d'une commande
-     */
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<PaymentResponseDTO> getPaymentByOrderId(@PathVariable Long orderId) {
-        log.info("Request to get payment for order: {}", orderId);
-        PaymentResponseDTO payment = paymentService.getPaymentByOrderId(orderId);
-        return ResponseEntity.ok(payment);
-    }
-
-    /**
-     * Récupérer les paiements d'un utilisateur
-     */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PaymentResponseDTO>> getUserPayments(@PathVariable Long userId) {
-        log.info("Request to get payments for user: {}", userId);
-        List<PaymentResponseDTO> payments = paymentService.getUserPayments(userId);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * Récupérer les paiements par statut
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<PaymentResponseDTO>> getPaymentsByStatus(@PathVariable PaymentStatus status) {
-        log.info("Request to get payments with status: {}", status);
-        List<PaymentResponseDTO> payments = paymentService.getPaymentsByStatus(status);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * Récupérer les paiements d'un vendeur
-     */
-    @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<List<PaymentResponseDTO>> getSellerPayments(@PathVariable Long sellerId) {
-        log.info("Request to get payments for seller: {}", sellerId);
-        List<PaymentResponseDTO> payments = paymentService.getSellerPayments(sellerId);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * Calculer les gains d'un vendeur
-     */
-    @GetMapping("/seller/{sellerId}/earnings")
-    public ResponseEntity<BigDecimal> calculateSellerEarnings(@PathVariable Long sellerId) {
-        log.info("Request to calculate earnings for seller: {}", sellerId);
-        BigDecimal earnings = paymentService.calculateSellerEarnings(sellerId);
-        return ResponseEntity.ok(earnings);
-    }
-
-    /**
-     * Rembourser un paiement
-     */
-    @PostMapping("/{paymentId}/refund")
-    public ResponseEntity<PaymentResponseDTO> refundPayment(
-            @PathVariable Long paymentId,
-            @Valid @RequestBody RefundRequestDTO dto) {
-
-        log.info("Request to refund payment: {}", paymentId);
-        PaymentResponseDTO response = paymentService.refundPayment(paymentId, dto);
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'PROFESSIONAL', 'ADMIN')")
+    @Operation(summary = "Get payment by ID", description = "Get payment details by ID")
+    public ResponseEntity<PaymentResponseDTO> getPayment(@PathVariable Long id) {
+        log.info("Getting payment: {}", id);
+        PaymentResponseDTO response = stripeService.getPayment(id);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Annuler un paiement
+     * Get current user's payments
+     * GET /api/payments/my-payments
      */
-    @PostMapping("/{paymentId}/cancel")
-    public ResponseEntity<PaymentResponseDTO> cancelPayment(@PathVariable Long paymentId) {
-        log.info("Request to cancel payment: {}", paymentId);
-        PaymentResponseDTO response = paymentService.cancelPayment(paymentId);
+    @GetMapping("/my-payments")
+    @PreAuthorize("hasAnyRole('INDIVIDUAL', 'PROFESSIONAL', 'ADMIN')")
+    @Operation(summary = "Get user payments", description = "Get all payments for the current user")
+    public ResponseEntity<Page<PaymentResponseDTO>> getUserPayments(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        log.info("Getting user payments");
+        Page<PaymentResponseDTO> response = stripeService.getUserPayments(pageable);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Compter les paiements par statut
+     * Refund a payment
+     * POST /api/payments/refund
      */
-    @GetMapping("/status/{status}/count")
-    public ResponseEntity<Long> countPaymentsByStatus(@PathVariable PaymentStatus status) {
-        log.info("Request to count payments with status: {}", status);
-        long count = paymentService.countPaymentsByStatus(status);
-        return ResponseEntity.ok(count);
+    @PostMapping("/refund")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Refund a payment", description = "Refund a payment (Admin only)")
+    public ResponseEntity<PaymentResponseDTO> refundPayment(@Valid @RequestBody RefundPaymentDTO request) {
+        log.info("Refunding payment: {}", request.getPaymentIntentId());
+        PaymentResponseDTO response = stripeService.refundPayment(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Stripe webhook endpoint
+     * POST /api/payments/webhook
+     */
+    @PostMapping("/webhook")
+    @Operation(summary = "Stripe webhook", description = "Handle Stripe webhook events")
+    public ResponseEntity<Void> handleWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+        log.info("Received Stripe webhook");
+        stripeService.handleWebhookEvent(payload, sigHeader);
+        return ResponseEntity.ok().build();
     }
 }
 
