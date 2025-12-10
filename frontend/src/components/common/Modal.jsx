@@ -11,6 +11,8 @@ const Modal = ({
   className = '',
 }) => {
   const sizes = {
+    xs: 'max-w-xs',
+    sm: 'max-w-sm',
     small: 'max-w-sm',
     md: 'max-w-md',
     medium: 'max-w-lg',
