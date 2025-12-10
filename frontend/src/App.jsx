@@ -8,6 +8,8 @@ import RegisterPage from './pages/RegisterPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import DashboardPage from './pages/DashboardPage';
+import PricingPage from './pages/PricingPage';
+import FeedbackPage from './pages/FeedbackPage';
 
 const SearchPage = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -30,9 +32,11 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
         </Route>
-        {/* Dashboard route without MainLayout */}
+        {/* Dashboard and Feedback routes without MainLayout */}
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/feedback" element={<FeedbackPage />} />
       </Routes>
     </BrowserRouter>
   );
