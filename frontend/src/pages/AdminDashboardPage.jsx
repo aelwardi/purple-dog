@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UsersIcon,
@@ -9,16 +9,21 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ClockIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  Squares2X2Icon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import CategoryManagement from '../components/admin/CategoryManagement';
+import ProductManagement from '../components/admin/ProductManagement';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [activeView, setActiveView] = useState('overview'); // overview, categories, products
 
   const handleLogout = () => {
     logout();
@@ -83,8 +88,15 @@ const AdminDashboardPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Conditional Views */}
+        {activeView === 'categories' ? (
+          <CategoryManagement />
+        ) : activeView === 'products' ? (
+          <ProductManagement />
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Total Users */}
           <Card className="p-6">
             <div className="flex items-center justify-between">
@@ -237,10 +249,18 @@ const AdminDashboardPage = () => {
                 Gérer les utilisateurs
               </Button>
               <Button
-                variant="outline"
+                variant={activeView === 'categories' ? 'primary' : 'outline'}
+                className="w-full justify-start"
+                icon={<Squares2X2Icon className="w-5 h-5" />}
+                onClick={() => setActiveView('categories')}
+              >
+                Gérer les catégories
+              </Button>
+              <Button
+                variant={activeView === 'products' ? 'primary' : 'outline'}
                 className="w-full justify-start"
                 icon={<ShoppingBagIcon className="w-5 h-5" />}
-                onClick={() => alert('Gestion des produits - À implémenter')}
+                onClick={() => setActiveView('products')}
               >
                 Gérer les produits
               </Button>
@@ -260,14 +280,16 @@ const AdminDashboardPage = () => {
               >
                 Traiter les signalements
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                icon={<ChartBarIcon className="w-5 h-5" />}
-                onClick={() => alert('Statistiques - À implémenter')}
-              >
-                Voir les statistiques détaillées
-              </Button>
+              {activeView !== 'overview' && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  icon={<ChartBarIcon className="w-5 h-5" />}
+                  onClick={() => setActiveView('overview')}
+                >
+                  Retour au tableau de bord
+                </Button>
+              )}
             </div>
           </Card>
         </div>
@@ -291,10 +313,11 @@ const AdminDashboardPage = () => {
             </div>
           </Card>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 export default AdminDashboardPage;
-

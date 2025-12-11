@@ -37,10 +37,31 @@ export const categoryService = {
   },
 
   /**
-   * Créer une catégorie
+   * Créer une catégorie (Admin uniquement)
    */
   create: async (categoryData) => {
     return await api.post('/categories', categoryData);
+  },
+
+  /**
+   * Mettre à jour une catégorie (Admin uniquement)
+   */
+  update: async (id, categoryData) => {
+    return await api.put(`/categories/${id}`, categoryData);
+  },
+
+  /**
+   * Supprimer une catégorie (Admin uniquement)
+   */
+  delete: async (id) => {
+    return await api.delete(`/categories/${id}`);
+  },
+
+  /**
+   * Récupérer toutes les catégories (incluant inactives)
+   */
+  getAll: async () => {
+    return await api.get('/categories');
   },
 
 };

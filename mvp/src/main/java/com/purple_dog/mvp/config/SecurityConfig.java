@@ -50,6 +50,10 @@ public class SecurityConfig {
                         .requestMatchers("/platform/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/reviews/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "USER")
 
                         .anyRequest().authenticated()
@@ -84,4 +88,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-
