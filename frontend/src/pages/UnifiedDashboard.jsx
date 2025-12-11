@@ -229,11 +229,11 @@ const UnifiedDashboard = () => {
     navigate('/feedback');
   };
 
-  const handleProductSubmit = (formData) => {
-    console.log('Product listing:', formData);
-    // TODO: Send to backend
+  const handleProductSubmit = (product) => {
+    console.log('Product published:', product);
     setShowListingForm(false);
     setActiveTab('myObjects');
+    // TODO: Refresh products list
   };
 
   // Profile handlers
