@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -12,15 +14,68 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-purple_dog_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-purple_dog_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - purple-dog-network
 
-  # Backend runs locally in development mode
-  # Start with: cd mvp && ./mvnw spring-boot:run
+  backend:
+    command: ["/bin/sh", "-c", "sleep infinity"] # temporaire, à remplacer par le vrai démarrage de l'app
+    build:
+      context: ./mvp
+      dockerfile: Dockerfile
+    image: purple-dog-backend:latest
+    container_name: purple-dog-backend
+    restart: "no" # à la place de 'unless-stopped'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # application.properties lit ces 3 variables :
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-purple_dog_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+
+      # URLs (si ton code les utilise)
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+
+      # Secrets (mettre dans .env)
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-ajowvlfocailnyjr}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_51ScpWHJj3NngK59lcowA058kF4yBU9azJcR1Z2ncmGyGwyOHrkrk0vLezbvUPnLcp2PlUXIaCdKJ4aaXxUlvjaoG00o6HPEzo9}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_51ScpWHJj3NngK59l7wCvqgVhuVTpITCXhKdrhOmyqTWCPz3MC5xPlwQHjR8JdKZD6RU1oZxfsI2s78vPx8NIfVVw00HeyjcLOj}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SHIPPO_API_KEY: ${SHIPPO_API_KEY:-shippo_test_f39a8c01f20e356314157c1df37de8948883acb2}
+
+      INVOICE_STORAGE_PATH: /var/app/invoices
+      TZ: Europe/Paris
+
+    ports:
+      - "8080:8080"
+    networks:
+      - purple-dog-network
+    volumes:
+      - invoices:/var/app/invoices
+      - uploads:/app/uploads
+    healthcheck:
+      # ⚠️ Context-path: /api → health sous /api/actuator/health
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   purple-dog-network:
@@ -28,4 +83,8 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  invoices:
+    driver: local
+  uploads:
     driver: local

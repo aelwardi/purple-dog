@@ -1,0 +1,18 @@
+
+# ---------- Build ----------
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -B -ntp -q -DskipTests dependency:go-offline || true
+COPY src ./src
+RUN mvn -B -ntp -DskipTests package
+
+# ---------- Runtime (Debian) ----------
+FROM eclipse-temurin:21-jre AS runtime
+WORKDIR /app
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
+COPY --from=build /app/target/*.jar /app/app.jar
+EXPOSE 8080
+ENV SPRING_PROFILES_ACTIVE=prod SERVER_PORT=8080 TZ=Europe/Paris
+ENTRYPOINT ["java","-jar","/app/app.jar"]
