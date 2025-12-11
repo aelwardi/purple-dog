@@ -43,19 +43,6 @@ export const categoryService = {
     return await api.post('/categories', categoryData);
   },
 
-  /**
-   * Placer une offre
-   */
-  placeBid: async (auctionId, amount) => {
-    return await api.post(`/auctions/${auctionId}/bids`, { amount });
-  },
-  /**
-   * Supprimer une enchère
-   */
-  delete: async (id) => {
-    return await api.delete(`/auctions/${id}`);
-  },
-
 };
 
 
