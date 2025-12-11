@@ -1,6 +1,8 @@
 package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.config.ShippoConfig;
+import com.purple_dog.mvp.config.ShippoConfig;
+import com.purple_dog.mvp.dao.AddressRepository;
 import com.purple_dog.mvp.dao.DeliveryRepository;
 import com.purple_dog.mvp.dao.OrderRepository;
 import com.purple_dog.mvp.dto.*;
@@ -31,6 +33,7 @@ public class ShippoService {
 
     private final DeliveryRepository deliveryRepository;
     private final OrderRepository orderRepository;
+    private final AddressRepository addressRepository;
     private final ShippoConfig shippoConfig;
 
     /**
@@ -39,11 +42,9 @@ public class ShippoService {
     @Transactional
     public ShippingRatesDTO createShipmentAndGetRates(CreateShipmentDTO request) {
         try {
-            log.info("Creating shipment for order: {}", request.getOrderId());
+            log.info("Creating shipment for order: {} or addressId: {}", request.getOrderId(), request.getToAddressId());
 
-            Order order = orderRepository.findById(request.getOrderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-
+            // Créer l'adresse d'expédition (FROM)
             Map<String, Object> fromAddressMap = new HashMap<>();
             fromAddressMap.put("name", request.getFromName());
             fromAddressMap.put("street1", request.getFromStreet());
@@ -56,15 +57,44 @@ public class ShippoService {
 
             com.shippo.model.Address fromAddress = com.shippo.model.Address.create(fromAddressMap);
 
-            com.purple_dog.mvp.entities.Address shippingAddress = order.getShippingAddress();
+            // Créer l'adresse de destination (TO)
             Map<String, Object> toAddressMap = new HashMap<>();
-            toAddressMap.put("name", order.getBuyer().getFirstName() + " " + order.getBuyer().getLastName());
-            toAddressMap.put("street1", shippingAddress.getStreet());
-            toAddressMap.put("city", shippingAddress.getCity());
-            toAddressMap.put("zip", shippingAddress.getPostalCode());
-            toAddressMap.put("country", shippingAddress.getCountry());
-            if (order.getBuyer().getPhone() != null) toAddressMap.put("phone", order.getBuyer().getPhone());
-            if (order.getBuyer().getEmail() != null) toAddressMap.put("email", order.getBuyer().getEmail());
+
+            if (request.getToAddressId() != null) {
+                // Cas 1: toAddressId fourni (depuis checkout AVANT création order)
+                com.purple_dog.mvp.entities.Address shippingAddress = addressRepository.findById(request.getToAddressId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+
+                Person buyer = shippingAddress.getPerson();
+                toAddressMap.put("name", buyer.getFirstName() + " " + buyer.getLastName());
+                toAddressMap.put("street1", shippingAddress.getStreet());
+                if (shippingAddress.getComplement() != null) {
+                    toAddressMap.put("street2", shippingAddress.getComplement());
+                }
+                toAddressMap.put("city", shippingAddress.getCity());
+                toAddressMap.put("zip", shippingAddress.getPostalCode());
+                toAddressMap.put("country", shippingAddress.getCountry());
+                if (buyer.getPhone() != null) toAddressMap.put("phone", buyer.getPhone());
+                if (buyer.getEmail() != null) toAddressMap.put("email", buyer.getEmail());
+            } else if (request.getOrderId() != null) {
+                // Cas 2: orderId fourni (depuis order existant)
+                Order order = orderRepository.findById(request.getOrderId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+                com.purple_dog.mvp.entities.Address shippingAddress = order.getShippingAddress();
+                toAddressMap.put("name", order.getBuyer().getFirstName() + " " + order.getBuyer().getLastName());
+                toAddressMap.put("street1", shippingAddress.getStreet());
+                if (shippingAddress.getComplement() != null) {
+                    toAddressMap.put("street2", shippingAddress.getComplement());
+                }
+                toAddressMap.put("city", shippingAddress.getCity());
+                toAddressMap.put("zip", shippingAddress.getPostalCode());
+                toAddressMap.put("country", shippingAddress.getCountry());
+                if (order.getBuyer().getPhone() != null) toAddressMap.put("phone", order.getBuyer().getPhone());
+                if (order.getBuyer().getEmail() != null) toAddressMap.put("email", order.getBuyer().getEmail());
+            } else {
+                throw new IllegalArgumentException("Either orderId or toAddressId must be provided");
+            }
 
             com.shippo.model.Address toAddress = com.shippo.model.Address.create(toAddressMap);
 
@@ -84,31 +114,44 @@ public class ShippoService {
             shipmentMap.put("parcels", Collections.singletonList(parcel.getObjectId()));
             shipmentMap.put("async", false);
 
-            Map<String, String> metadata = new HashMap<>();
-            metadata.put("order_id", order.getId().toString());
-            metadata.put("order_number", order.getOrderNumber());
-            shipmentMap.put("metadata", metadata);
+            // Ajouter metadata seulement si orderId existe
+            if (request.getOrderId() != null) {
+                Order order = orderRepository.findById(request.getOrderId()).orElse(null);
+                if (order != null) {
+                    Map<String, String> metadata = new HashMap<>();
+                    metadata.put("order_id", order.getId().toString());
+                    metadata.put("order_number", order.getOrderNumber());
+                    shipmentMap.put("metadata", metadata);
+                }
+            }
 
             Shipment shipment = Shipment.create(shipmentMap);
 
             log.info("Shipment created: {}", shipment.getObjectId());
 
-            Delivery delivery = deliveryRepository.findByOrderId(order.getId())
-                    .orElse(Delivery.builder()
-                            .order(order)
-                            .status(DeliveryStatus.PENDING)
-                            .build());
+            // Sauvegarder delivery seulement si orderId existe
+            if (request.getOrderId() != null) {
+                Order order = orderRepository.findById(request.getOrderId()).orElse(null);
+                if (order != null) {
+                    Delivery delivery = deliveryRepository.findByOrderId(order.getId())
+                            .orElse(Delivery.builder()
+                                    .order(order)
+                                    .status(DeliveryStatus.PENDING)
+                                    .build());
 
-            delivery.setShippoShipmentId(shipment.getObjectId());
-            delivery.setWeight(request.getWeight());
-            delivery.setLength(request.getLength());
-            delivery.setWidth(request.getWidth());
-            delivery.setHeight(request.getHeight());
-            delivery.setFromAddress(fromAddressMapToJson(fromAddressMap));
-            delivery.setToAddress(toAddressMapToJson(toAddressMap));
+                    delivery.setShippoShipmentId(shipment.getObjectId());
+                    delivery.setWeight(request.getWeight());
+                    delivery.setLength(request.getLength());
+                    delivery.setWidth(request.getWidth());
+                    delivery.setHeight(request.getHeight());
+                    delivery.setFromAddress(fromAddressMapToJson(fromAddressMap));
+                    delivery.setToAddress(toAddressMapToJson(toAddressMap));
 
-            deliveryRepository.save(delivery);
+                    deliveryRepository.save(delivery);
+                }
+            }
 
+            // Extraire et mapper les tarifs de livraison
             List<ShippingRatesDTO.ShippingRate> ratesList = shipment.getRates().stream()
                     .map(this::mapShippoRateToDTO)
                     .collect(Collectors.toList());

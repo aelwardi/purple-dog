@@ -46,6 +46,7 @@ export const categoryService = {
 };
 
 
+
 // Service pour gérer les catégories et leurs produits
 
 // export const getCategories = async () => {
