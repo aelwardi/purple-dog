@@ -16,6 +16,9 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOriginPatterns(
                     "http://localhost:5173",     // Frontend Vite dev server
+                    "http://localhost:5174",     // Vite port 2
+                    "http://localhost:5175",     // Vite port 3
+                    "http://localhost:5176",     // Vite port 4
                     "http://localhost:3000",     // Alternative frontend port
                     "http://localhost:4173"      // Vite preview
                 )
