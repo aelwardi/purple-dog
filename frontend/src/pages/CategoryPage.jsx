@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
-import { getCategoryProducts, getCategories } from '../services/categoryService';
+// import { getCategoryProducts, getCategories } from '../services/categoryService';
 
 const CategoryPage = () => {
     const { categoryId } = useParams();
@@ -45,6 +45,8 @@ const CategoryPage = () => {
 
     useEffect(() => {
         loadCategoryData();
+        console.log('categoryId changed:', categoryId);
+        
     }, [categoryId, filters]);
 
     const loadCategoryData = async () => {
