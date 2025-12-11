@@ -23,6 +23,7 @@ public class ProductResponse {
     private ProductCondition productCondition;
     private ProductStatus status;
     private SaleType saleType;
+    private BigDecimal price;  // Prix du produit (alias pour estimatedValue pour compatibilité frontend)
     private BigDecimal estimatedValue;
     private String brand;
     private Integer yearOfManufacture;

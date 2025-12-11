@@ -13,4 +13,5 @@ public class CategoryResponse {
     private String description;
     private String iconUrl;
     private Boolean active;
+    private Long productCount; // Nombre de produits dans cette catégorie
 }

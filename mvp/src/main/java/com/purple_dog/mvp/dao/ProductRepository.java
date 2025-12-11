@@ -16,4 +16,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     List<Product> findAllBySellerId(Long sellerId);
 
     List<Product> findAllBySellerIdAndStatus(Long sellerId, ProductStatus status);
+
+    Long countByCategoryId(Long categoryId);
 }

@@ -13,13 +13,21 @@ const CategoriesGrid = () => {
       try {
         setLoading(true);
         const response = await categoryService.getActive();
-        console.log('Active Categories Response:', response);
-        
+        console.log('📂 Active Categories Response:', response);
+
         // Vérifier si la réponse est directement un tableau ou si les données sont dans response.data
         const categories = Array.isArray(response) ? response : response.data || [];
+        console.log('📊 Categories array:', categories);
+
+        if (categories.length > 0) {
+          console.log('📦 First category sample:', categories[0]);
+          console.log('🔢 First category count field:', categories[0]?.count);
+          console.log('🔢 First category productCount field:', categories[0]?.productCount);
+        }
+
         setActiveCategories(categories);
       } catch (err) {
-        console.error('Error fetching categories:', err);
+        console.error('❌ Error fetching categories:', err);
       } finally {
         setLoading(false);
       }
@@ -161,9 +169,11 @@ const CategoriesGrid = () => {
                   <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
                     {category.name}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    {category?.count || 0} objets
-                  </p>
+                  {(category?.count > 0 || category?.productCount > 0) && (
+                    <p className="text-sm text-gray-500">
+                      {category?.productCount || category?.count || 0} objet{(category?.productCount || category?.count || 0) > 1 ? 's' : ''}
+                    </p>
+                  )}
                 </div>
               </Card>
             </Link>

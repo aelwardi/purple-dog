@@ -1,6 +1,7 @@
 package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.dao.CategoryRepository;
+import com.purple_dog.mvp.dao.ProductRepository;
 import com.purple_dog.mvp.dto.CategoryCreateRequest;
 import com.purple_dog.mvp.dto.CategoryResponse;
 import com.purple_dog.mvp.entities.Category;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     /**
      * Crée une nouvelle catégorie
@@ -99,11 +101,15 @@ public class CategoryService {
     }
 
     private CategoryResponse toResponse(Category category) {
+        // Compter le nombre de produits dans cette catégorie
+        Long productCount = productRepository.countByCategoryId(category.getId());
+
         return new CategoryResponse(
                 category.getId(),
                 category.getName(),
                 category.getDescription(),
                 category.getIconUrl(),
-                category.getActive());
+                category.getActive(),
+                productCount);
     }
 }
