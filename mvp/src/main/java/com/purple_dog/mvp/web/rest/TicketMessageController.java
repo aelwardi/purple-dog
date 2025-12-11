@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/support/messages")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class TicketMessageController {
 
     private final TicketMessageService messageService;

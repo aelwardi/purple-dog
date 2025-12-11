@@ -21,7 +21,6 @@ import java.util.Map;
 @RequestMapping("/admins")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class AdminController {
 
     private final AdminService adminService;

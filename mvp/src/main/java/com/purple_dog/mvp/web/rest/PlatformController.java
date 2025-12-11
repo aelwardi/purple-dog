@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 @RequestMapping("/platform")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class PlatformController {
 
     private final PlatformService platformService;

@@ -23,7 +23,6 @@ import java.util.Map;
 @RequestMapping("/professionals")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class ProfessionalController {
 
     private final ProfessionalService professionalService;

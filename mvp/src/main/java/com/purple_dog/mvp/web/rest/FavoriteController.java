@@ -16,7 +16,6 @@ import java.util.List;
 @RequestMapping("/favorites")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;

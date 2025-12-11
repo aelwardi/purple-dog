@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/plans")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class PlanController {
 
     private final PlanService planService;

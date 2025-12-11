@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/features")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class FeatureController {
 
     private final FeatureService featureService;

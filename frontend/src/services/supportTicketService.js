@@ -8,7 +8,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Created ticket
    */
   createTicket: async (userId, ticketData) => {
-    const response = await api.post(`/support/tickets/user/${userId}`, ticketData);
+    const response = await api.post(`/tickets/user/${userId}`, ticketData);
     return response.data;
   },
 
@@ -18,7 +18,7 @@ const supportTicketService = {
    * @returns {Promise<Array>} List of tickets
    */
   getMyTickets: async (userId) => {
-    const response = await api.get(`/support/tickets/user/${userId}`);
+    const response = await api.get(`/tickets/user/${userId}`);
     return response.data;
   },
 
@@ -28,7 +28,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Ticket details
    */
   getTicketById: async (ticketId) => {
-    const response = await api.get(`/support/tickets/${ticketId}`);
+    const response = await api.get(`/tickets/${ticketId}`);
     return response.data;
   },
 
@@ -38,7 +38,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Ticket details
    */
   getTicketByNumber: async (ticketNumber) => {
-    const response = await api.get(`/support/tickets/number/${ticketNumber}`);
+    const response = await api.get(`/tickets/number/${ticketNumber}`);
     return response.data;
   },
 
@@ -49,7 +49,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Updated ticket
    */
   updateTicket: async (ticketNumber, updateData) => {
-    const response = await api.put(`/support/tickets/${ticketNumber}`, updateData);
+    const response = await api.put(`/tickets/${ticketNumber}`, updateData);
     return response.data;
   },
 
@@ -60,7 +60,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Response
    */
   addMessage: async (ticketId, message) => {
-    const response = await api.post(`/support/tickets/${ticketId}/messages`, { message });
+    const response = await api.post(`/tickets/${ticketId}/messages`, { message });
     return response.data;
   },
 
@@ -70,7 +70,7 @@ const supportTicketService = {
    * @returns {Promise<Object>} Response
    */
   closeTicket: async (ticketId) => {
-    const response = await api.put(`/support/tickets/${ticketId}/close`);
+    const response = await api.put(`/tickets/${ticketId}/close`);
     return response.data;
   },
 };
