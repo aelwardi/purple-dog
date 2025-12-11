@@ -106,7 +106,7 @@ const CategoriesGrid = () => {
           {categories.map((category) => (
             <Link 
               key={category.id} 
-              to={`/search?category=${category.id}`}
+              to={`/category/${category.id}`}
               className="group"
             >
               <Card padding="none" className="overflow-hidden">

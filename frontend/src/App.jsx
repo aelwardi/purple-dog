@@ -14,6 +14,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import SearchPage from './pages/SearchPage';
+import CategoryPage from './pages/CategoryPage';
 import DashboardPage from './pages/DashboardPage';
 import PricingPage from './pages/PricingPage';
 import FeedbackPage from './pages/FeedbackPage';
@@ -33,6 +34,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/search" element={<SearchPage />} />
+              <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/pricing" element={<PricingPage />} />
