@@ -1,93 +1,82 @@
-/**
- * Service pour les opérations liées aux produits
- */
+import api from './api';
 
-import { api } from '../utils/apiClient';
-
-export const productService = {
+const productService = {
   /**
-   * Récupérer un produit par ID
+   * Create a new product listing
+   * @param {Object} productData
+   * @returns {Promise<Object>} Created product
    */
-  getById: async (id) => {
-    return await api.get(`/products/${id}`);
+  createProduct: async (productData) => {
+    const response = await api.post('/products', productData);
+    return response.data;
   },
 
   /**
-   * Récupérer tous les produits
+   * Get product by ID
+   * @param {number} productId
+   * @returns {Promise<Object>} Product details
    */
-  getAll: async () => {
-    return await api.get('/products');
+  getProduct: async (productId) => {
+    const response = await api.get(`/products/${productId}`);
+    return response.data;
   },
 
   /**
-   * Rechercher des produits
+   * Get products by seller
+   * @param {number} sellerId
+   * @param {string} status - Optional filter by status
+   * @returns {Promise<Array>} List of products
    */
-  search: async (params) => {
-    const queryString = new URLSearchParams(params).toString();
-    return await api.get(`/products/search?${queryString}`);
+  getProductsBySeller: async (sellerId, status = null) => {
+    const params = status ? { status } : {};
+    const response = await api.get(`/products/seller/${sellerId}`, { params });
+    return response.data;
   },
 
   /**
-   * Récupérer produits par catégorie
+   * Search products
+   * @param {Object} searchParams
+   * @returns {Promise<Array>} List of products
    */
-  getByCategory: async (categoryId) => {
-    return await api.get(`/products/category/${categoryId}`);
+  searchProducts: async (searchParams) => {
+    const response = await api.get('/products/search', { params: searchParams });
+    return response.data;
   },
 
   /**
-   * Récupérer produits par vendeur
+   * Add product to favorites
+   * @param {number} userId
+   * @param {number} productId
+   * @returns {Promise<Object>} Response
    */
-  getBySeller: async (sellerId) => {
-    return await api.get(`/products/seller/${sellerId}`);
+  addFavorite: async (userId, productId) => {
+    const response = await api.post(`/products/${productId}/favorite`, null, {
+      params: { userId }
+    });
+    return response.data;
   },
 
   /**
-   * Créer un produit
+   * Remove product from favorites
+   * @param {number} userId
+   * @param {number} productId
+   * @returns {Promise<Object>} Response
    */
-  create: async (productData) => {
-    return await api.post('/products', productData);
+  removeFavorite: async (userId, productId) => {
+    const response = await api.delete(`/products/${productId}/favorite`, {
+      params: { userId }
+    });
+    return response.data;
   },
 
   /**
-   * Mettre à jour un produit
+   * Get user's favorite products
+   * @param {number} userId
+   * @returns {Promise<Array>} List of favorite products
    */
-  update: async (id, productData) => {
-    return await api.put(`/products/${id}`, productData);
-  },
-
-  /**
-   * Supprimer un produit
-   */
-  delete: async (id) => {
-    return await api.delete(`/products/${id}`);
-  },
-
-  /**
-   * Uploader des images de produit
-   */
-  uploadImages: async (productId, files, onUploadProgress) => {
-    return await api.uploadMultiple(`/products/${productId}/images`, files, onUploadProgress);
-  },
-
-  /**
-   * Supprimer une image de produit
-   */
-  deleteImage: async (productId, imageId) => {
-    return await api.delete(`/products/${productId}/images/${imageId}`);
-  },
-
-  /**
-   * Mettre à jour le statut d'un produit
-   */
-  updateStatus: async (id, status) => {
-    return await api.patch(`/products/${id}/status?status=${status}`);
-  },
-
-  /**
-   * Récupérer les statistiques des produits
-   */
-  getStatistics: async () => {
-    return await api.get('/products/statistics');
+  getFavorites: async (userId) => {
+    const response = await api.get(`/products/favorites/${userId}`);
+    return response.data;
   },
 };
 

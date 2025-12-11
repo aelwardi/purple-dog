@@ -1,57 +1,32 @@
-/**
- * Service pour les opérations liées aux catégories
- */
+import api from './api';
 
-import { api } from '../utils/apiClient';
-
-export const categoryService = {
+const categoryService = {
   /**
-   * Récupérer une catégorie par ID
+   * Get all categories
+   * @returns {Promise<Array>} List of all categories
    */
-  getById: async (id) => {
-    return await api.get(`/categories/${id}`);
+  getAllCategories: async () => {
+    const response = await api.get('/categories');
+    return response.data;
   },
 
   /**
-   * Récupérer toutes les catégories
+   * Get active categories only
+   * @returns {Promise<Array>} List of active categories
    */
-  getAll: async () => {
-    return await api.get('/categories');
+  getActiveCategories: async () => {
+    const response = await api.get('/categories/active');
+    return response.data;
   },
 
   /**
-   * Récupérer les catégories parentes (niveau 0)
+   * Get category by ID
+   * @param {number} categoryId
+   * @returns {Promise<Object>} Category details
    */
-  getRootCategories: async () => {
-    return await api.get('/categories/root');
-  },
-
-  /**
-   * Récupérer les sous-catégories d'une catégorie
-   */
-  getSubCategories: async (parentId) => {
-    return await api.get(`/categories/${parentId}/subcategories`);
-  },
-
-  /**
-   * Créer une catégorie
-   */
-  create: async (categoryData) => {
-    return await api.post('/categories', categoryData);
-  },
-
-  /**
-   * Mettre à jour une catégorie
-   */
-  update: async (id, categoryData) => {
-    return await api.put(`/categories/${id}`, categoryData);
-  },
-
-  /**
-   * Supprimer une catégorie
-   */
-  delete: async (id) => {
-    return await api.delete(`/categories/${id}`);
+  getCategory: async (categoryId) => {
+    const response = await api.get(`/categories/${categoryId}`);
+    return response.data;
   },
 };
 
