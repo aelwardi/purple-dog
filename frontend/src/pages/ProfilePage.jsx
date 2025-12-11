@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,13 +7,13 @@ import {
   UserCircleIcon,
   KeyIcon,
   TrashIcon,
-  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import profileService from '../services/profileService';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
+import Header from '../components/common/Header';
 import ConfirmModal from '../components/common/ConfirmModal';
 
 const profileSchema = z.object({
@@ -44,28 +44,9 @@ const ProfilePage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [showProfileConfirm, setShowProfileConfirm] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileStep, setMobileStep] = useState(1); // 1: Info de base, 2: Contact, 3: Bio/Pro
   const [pendingProfileData, setPendingProfileData] = useState(null);
   const [pendingPasswordData, setPendingPasswordData] = useState(null);
-  const userMenuRef = useRef(null);
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
-      }
-    };
-
-    if (userMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [userMenuOpen]);
 
   // Profile form
   const {
@@ -169,39 +150,11 @@ const ProfilePage = () => {
     }
   };
 
-  // Logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      showSuccess('Déconnexion réussie');
-      navigate('/');
-    } catch (error) {
-      handleError(error);
-    }
-  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Top Bar même en loading */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                </button>
-                <h1 className="text-xl font-semibold text-gray-900">Mon Profil</h1>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <Header />
         {/* Loading spinner */}
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -212,86 +165,8 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </button>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Mon Profil
-              </h1>
-            </div>
-
-            {/* User Menu */}
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setUserMenuOpen(!userMenuOpen);
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
-                </div>
-                <span className="text-sm font-medium text-gray-700">
-                  {user?.firstName} {user?.lastName}
-                </span>
-                <svg
-                  className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Dropdown Menu */}
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      navigate('/dashboard');
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
-                  >
-                    📊 Mon Dashboard
-                  </button>
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-purple-600 bg-purple-50 transition-colors"
-                  >
-                    👤 Mon Profil
-                  </button>
-                  <hr className="my-2" />
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                  >
-                    <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                    <span>Se déconnecter</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Header */}
+      <Header />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -33,5 +33,6 @@ public class SupportTicketResponseDTO {
     private LocalDateTime closedAt;
     private long messageCount;
     private TicketMessageDTO lastMessage;
+    private java.util.List<TicketMessageDTO> ticketMessages;
 }
 

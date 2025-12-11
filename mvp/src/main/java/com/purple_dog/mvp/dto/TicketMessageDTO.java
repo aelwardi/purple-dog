@@ -19,7 +19,9 @@ public class TicketMessageDTO {
     private String senderName;
     private String senderEmail;
     private String content;
+    private String message;
     private Boolean isStaffReply;
+    private Boolean isAdminResponse;
     private LocalDateTime createdAt;
 }
 
