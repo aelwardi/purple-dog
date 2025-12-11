@@ -334,7 +334,8 @@ public class ProductService {
                 product.getProductCondition(),
                 product.getStatus(),
                 product.getSaleType(),
-                product.getEstimatedValue(),
+                product.getEstimatedValue(), // price
+                product.getEstimatedValue(), // estimatedValue
                 product.getBrand(),
                 product.getYearOfManufacture(),
                 product.getOrigin(),
