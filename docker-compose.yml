@@ -79,6 +79,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     image: purple-dog-frontend:latest
     container_name: purple-dog-frontend
     restart: unless-stopped
