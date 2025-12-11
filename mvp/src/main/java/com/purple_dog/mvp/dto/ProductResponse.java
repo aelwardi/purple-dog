@@ -37,4 +37,25 @@ public class ProductResponse {
     private LocalDateTime updatedAt;
     private List<PhotoResponse> photos;
     private List<DocumentResponseDTO> documents;
+    private SellerInfo seller;
+    private CategoryInfo category;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SellerInfo {
+        private Long id;
+        private String firstName;
+        private String lastName;
+        private String email;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CategoryInfo {
+        private Long id;
+        private String name;
+        private String description;
+    }
 }
