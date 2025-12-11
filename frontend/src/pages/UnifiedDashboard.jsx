@@ -29,6 +29,7 @@ import ProductListingForm from '../components/products/ProductListingForm';
 import MyProducts from '../components/dashboard/MyProducts';
 import MyFavorites from '../components/dashboard/MyFavorites';
 import MyPurchases from '../components/dashboard/MyPurchases';
+import FeedbackModal from '../components/feedback/FeedbackModal';
 import supportTicketService from '../services/supportTicketService';
 import profileService from '../services/profileService';
 
@@ -63,6 +64,7 @@ const UnifiedDashboard = () => {
   const { showSuccess, showError, handleError } = useErrorHandler();
   const [activeTab, setActiveTab] = useState('overview');
   const [showListingForm, setShowListingForm] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // Support states
   const [tickets, setTickets] = useState([]);
@@ -229,7 +231,7 @@ const UnifiedDashboard = () => {
   };
 
   const handleFeedbackClick = () => {
-    navigate('/feedback');
+    setShowFeedbackModal(true);
   };
 
   const handleProductSubmit = (product) => {
@@ -1006,6 +1008,13 @@ const UnifiedDashboard = () => {
         confirmText="Oui, supprimer mon compte"
         variant="danger"
       />
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <FeedbackModal
+          onClose={() => setShowFeedbackModal(false)}
+        />
+      )}
 
       <ConfirmModal
         isOpen={showProfileUpdateConfirm}
