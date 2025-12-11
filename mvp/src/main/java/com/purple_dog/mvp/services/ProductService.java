@@ -193,8 +193,15 @@ public class ProductService {
         if (request.getEstimatedValue() == null || request.getEstimatedValue().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ProductException("Estimated value must be positive");
         }
-        if (request.getPhotoUrls() == null || request.getPhotoUrls().size() < 10) {
-            throw new ProductException("At least 10 photos are required");
+        // Photo validation: minimum 5, maximum 10
+        if (request.getPhotoUrls() == null || request.getPhotoUrls().isEmpty()) {
+            throw new ProductException("At least 5 photos are required");
+        }
+        if (request.getPhotoUrls().size() < 5) {
+            throw new ProductException("At least 5 photos are required");
+        }
+        if (request.getPhotoUrls().size() > 10) {
+            throw new ProductException("Maximum 10 photos allowed");
         }
     }
 
