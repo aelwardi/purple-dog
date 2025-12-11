@@ -274,8 +274,14 @@ const RegisterIndividualPage = () => {
             </div>
 
             {/* Submit button */}
-            <Button type="submit" variant="primary" className="w-full" size="large">
-              Créer mon compte
+            <Button 
+              type="submit" 
+              variant="primary" 
+              className="w-full" 
+              size="large"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Création en cours...' : 'Créer mon compte'}
             </Button>
 
             <p className="text-sm text-gray-600 text-center">
