@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: purple-dog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # DEV uniquement : expose le port pour outils locaux (pgAdmin, etc.)
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - purple-dog-network
+
+  backend:
+    build:
+      context: ./mvp
+      dockerfile: Dockerfile
+    image: purple-dog-backend:latest
+    container_name: purple-dog-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Datasource (lus par application.properties)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Profil & serveur
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      TZ: Europe/Paris
+
+      # URLs (utilisées par ta Security/CORS)
+      APP_URL: ${APP_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+
+      # Secrets (définir via .env — éviter les overrides vides)
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SHIPPO_API_KEY: ${SHIPPO_API_KEY}
+      GMAIL_USERNAME: ${GMAIL_APP_USERNAME}
+
+      # Stockage factures
+      INVOICE_STORAGE_PATH: /var/app/invoices
+    ports:
+      - "8080:8080"
+    networks:
+      - purple-dog-network
+    volumes:
+      - invoices:/var/app/invoices
+      - uploads:/app/uploads
+    healthcheck:
+      # Context-path: /api → health sous /api/actuator/health
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/actuator/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: purple-dog-frontend:latest
+    container_name: purple-dog-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - purple-dog-network
+
+networks:
+  purple-dog-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  invoices:
+    driver: local
+  uploads:
+    driver: local
