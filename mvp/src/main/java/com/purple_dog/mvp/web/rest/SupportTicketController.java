@@ -139,6 +139,20 @@ public class SupportTicketController {
     }
 
     /**
+     * Ajouter un message à un ticket
+     */
+    @PostMapping("/{ticketId}/messages")
+    public ResponseEntity<SupportTicketResponseDTO> addMessage(
+            @PathVariable Long ticketId,
+            @RequestBody java.util.Map<String, String> request) {
+
+        log.info("Request to add message to ticket: {}", ticketId);
+        String message = request.get("message");
+        SupportTicketResponseDTO response = ticketService.addMessage(ticketId, message);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Fermer un ticket
      */
     @PutMapping("/{ticketId}/close")

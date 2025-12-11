@@ -201,6 +201,36 @@ public class SupportTicketService {
     }
 
     /**
+     * Ajouter un message à un ticket
+     */
+    public SupportTicketResponseDTO addMessage(Long ticketId, String messageText) {
+        log.info("Adding message to ticket: {}", ticketId);
+
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + ticketId));
+
+        if (ticket.getStatus() == TicketStatus.CLOSED) {
+            throw new InvalidOperationException("Cannot add message to a closed ticket");
+        }
+
+        TicketMessage message = TicketMessage.builder()
+                .supportTicket(ticket)
+                .sender(ticket.getUser())
+                .content(messageText)
+                .isStaffReply(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        messageRepository.save(message);
+
+        ticket.setUpdatedAt(LocalDateTime.now());
+        ticket = ticketRepository.save(ticket);
+
+        log.info("Message added successfully to ticket: {}", ticketId);
+        return mapToResponseDTO(ticket);
+    }
+
+    /**
      * Rouvrir un ticket
      */
     public SupportTicketResponseDTO reopenTicket(Long ticketId) {
@@ -295,6 +325,12 @@ public class SupportTicketService {
         long messageCount = messageRepository.countByTicketId(ticket.getId());
         TicketMessage lastMessage = messageRepository.findLastMessageByTicketId(ticket.getId());
 
+        // Récupérer tous les messages du ticket
+        List<TicketMessage> messages = messageRepository.findBySupportTicketIdOrderByCreatedAtAsc(ticket.getId());
+        List<TicketMessageDTO> messageDTOs = messages.stream()
+                .map(this::mapMessageToDTO)
+                .collect(Collectors.toList());
+
         return SupportTicketResponseDTO.builder()
                 .id(ticket.getId())
                 .ticketNumber(ticket.getTicketNumber())
@@ -315,6 +351,7 @@ public class SupportTicketService {
                 .closedAt(ticket.getClosedAt())
                 .messageCount(messageCount)
                 .lastMessage(lastMessage != null ? mapMessageToDTO(lastMessage) : null)
+                .ticketMessages(messageDTOs)
                 .build();
     }
 
@@ -326,7 +363,9 @@ public class SupportTicketService {
                 .senderName(message.getSender().getFirstName() + " " + message.getSender().getLastName())
                 .senderEmail(message.getSender().getEmail())
                 .content(message.getContent())
+                .message(message.getContent()) // Alias pour compatibilité frontend
                 .isStaffReply(message.getIsStaffReply())
+                .isAdminResponse(message.getIsStaffReply()) // Alias pour compatibilité frontend
                 .createdAt(message.getCreatedAt())
                 .build();
     }

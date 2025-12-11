@@ -39,9 +39,15 @@ const ConfirmModal = ({
       iconColor: 'text-purple-600',
       buttonClass: 'bg-purple-600 hover:bg-purple-700 text-white',
     },
+    primary: {
+      icon: InformationCircleIcon,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      buttonClass: 'bg-purple-600 hover:bg-purple-700 text-white',
+    },
   };
 
-  const { icon: Icon, iconBg, iconColor, buttonClass } = variants[variant];
+  const { icon: Icon, iconBg, iconColor, buttonClass } = variants[variant] || variants.info;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
