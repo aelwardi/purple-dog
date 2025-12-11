@@ -85,6 +85,9 @@ public abstract class Person {
     @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Document> documents = new ArrayList<>();
 
+    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

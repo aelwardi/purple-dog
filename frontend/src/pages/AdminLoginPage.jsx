@@ -119,8 +119,45 @@ const AdminLoginPage = () => {
           </div>
 
           <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs text-gray-900 font-semibold mb-2">Compte de test admin :</p>
-            <p className="text-xs text-gray-700">admin@purpledog.com / Admin@123</p>
+            <p className="text-xs text-gray-900 font-semibold mb-3">🔑 Comptes Admin Disponibles :</p>
+
+            {/* Super Admin */}
+            <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded">
+              <p className="text-xs text-purple-900 font-semibold mb-1">👑 Super Admin</p>
+              <div className="space-y-0.5 text-xs">
+                <p className="text-gray-700">
+                  <span className="font-medium">Email:</span> a.elwardi98@gmail.com
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-medium">Mot de passe:</span> SuperAdmin@2025
+                </p>
+                <p className="text-xs text-purple-600 italic mt-1">
+                  Permissions complètes sur la plateforme
+                </p>
+              </div>
+            </div>
+
+            {/* Test Admin */}
+            <div className="p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-xs text-blue-900 font-semibold mb-1">👤 Admin Test</p>
+              <div className="space-y-0.5 text-xs">
+                <p className="text-gray-700">
+                  <span className="font-medium">Email:</span> admin@purpledog.com
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-medium">Mot de passe:</span> Admin@123
+                </p>
+                <p className="text-xs text-blue-600 italic mt-1">
+                  Permissions standards d'administration
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-xs text-yellow-800">
+                ⚠️ Changez les mots de passe après la première connexion
+              </p>
+            </div>
           </div>
         </Card>
 

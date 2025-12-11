@@ -1,6 +1,7 @@
 package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.dao.AdminRepository;
+import com.purple_dog.mvp.dao.PasswordResetTokenRepository;
 import com.purple_dog.mvp.dao.PersonRepository;
 import com.purple_dog.mvp.dto.AdminCreateDTO;
 import com.purple_dog.mvp.dto.AdminResponseDTO;
@@ -27,6 +28,7 @@ public class AdminService {
 
     private final AdminRepository adminRepository;
     private final PersonRepository personRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AdminResponseDTO createAdmin(AdminCreateDTO dto) {
         log.info("Creating admin with email: {}", dto.getEmail());
@@ -137,9 +139,14 @@ public class AdminService {
 
     public void deleteAdmin(Long id) {
         log.info("Deleting admin with ID: {}", id);
-        if (!adminRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Admin not found with ID: " + id);
-        }
+        Admin admin = adminRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with ID: " + id));
+
+        // Nettoyer les tokens de réinitialisation de mot de passe avant suppression
+        log.debug("Cleaning password reset tokens for admin ID: {}", id);
+        passwordResetTokenRepository.deleteByPerson(admin);
+
+        // Supprimer l'admin
         adminRepository.deleteById(id);
         log.info("Admin deleted successfully with ID: {}", id);
     }

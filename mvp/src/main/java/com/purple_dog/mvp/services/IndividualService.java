@@ -1,6 +1,7 @@
 package com.purple_dog.mvp.services;
 
 import com.purple_dog.mvp.dao.IndividualRepository;
+import com.purple_dog.mvp.dao.PasswordResetTokenRepository;
 import com.purple_dog.mvp.dao.PersonRepository;
 import com.purple_dog.mvp.dto.IndividualCreateDTO;
 import com.purple_dog.mvp.dto.IndividualResponseDTO;
@@ -28,6 +29,7 @@ public class IndividualService {
 
     private final IndividualRepository individualRepository;
     private final PersonRepository personRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public IndividualResponseDTO createIndividual(RegisterIndividualDTO dto) {
         log.info("Creating individual from registration with email: {}", dto.getEmail());
@@ -146,9 +148,14 @@ public class IndividualService {
 
     public void deleteIndividual(Long id) {
         log.info("Deleting individual with ID: {}", id);
-        if (!individualRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Individual not found with ID: " + id);
-        }
+        Individual individual = individualRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Individual not found with ID: " + id));
+
+        // Nettoyer les tokens de réinitialisation de mot de passe avant suppression
+        log.debug("Cleaning password reset tokens for individual ID: {}", id);
+        passwordResetTokenRepository.deleteByPerson(individual);
+
+        // Supprimer l'individu
         individualRepository.deleteById(id);
         log.info("Individual deleted successfully with ID: {}", id);
     }

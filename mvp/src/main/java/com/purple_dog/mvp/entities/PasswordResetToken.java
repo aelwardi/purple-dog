@@ -24,7 +24,8 @@ public class PasswordResetToken {
     private String token;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "person_id", nullable = false)
+    @JoinColumn(name = "person_id", nullable = false, foreignKey = @ForeignKey(name = "fkc72a7s0s2e090500h1y6vgy6h"))
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Person person;
 
     @Column(nullable = false)

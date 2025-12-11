@@ -1,5 +1,6 @@
 package com.purple_dog.mvp.services;
 
+import com.purple_dog.mvp.dao.PasswordResetTokenRepository;
 import com.purple_dog.mvp.dao.PersonRepository;
 import com.purple_dog.mvp.dao.ProfessionalRepository;
 import com.purple_dog.mvp.dto.ProfessionalCreateDTO;
@@ -28,6 +29,7 @@ public class ProfessionalService {
 
     private final ProfessionalRepository professionalRepository;
     private final PersonRepository personRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public ProfessionalResponseDTO createProfessional(RegisterProfessionalDTO dto) {
         log.info("Creating professional from registration with email: {}", dto.getEmail());
@@ -183,9 +185,14 @@ public class ProfessionalService {
 
     public void deleteProfessional(Long id) {
         log.info("Deleting professional with ID: {}", id);
-        if (!professionalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Professional not found with ID: " + id);
-        }
+        Professional professional = professionalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Professional not found with ID: " + id));
+
+        // Nettoyer les tokens de réinitialisation de mot de passe avant suppression
+        log.debug("Cleaning password reset tokens for professional ID: {}", id);
+        passwordResetTokenRepository.deleteByPerson(professional);
+
+        // Supprimer le professionnel
         professionalRepository.deleteById(id);
         log.info("Professional deleted successfully with ID: {}", id);
     }
