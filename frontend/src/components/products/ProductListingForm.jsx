@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import uploadService from '../../services/uploadService';
 
 const ProductListingForm = ({ onSubmit, onCancel }) => {
   const { user } = useAuth();
@@ -160,6 +161,15 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
     setLoading(true);
 
     try {
+      // Upload photos to backend
+      let photoUrls = [];
+
+      if (formData.photos && formData.photos.length > 0) {
+        showSuccess('Upload des photos en cours...');
+        photoUrls = await uploadService.uploadPhotos(formData.photos);
+        showSuccess(`${photoUrls.length} photos uploadées avec succès !`);
+      }
+
       const productData = {
         sellerId: user.id,
         categoryId: parseInt(formData.categoryId),
@@ -177,7 +187,7 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
         heightCm: formData.heightCm ? parseFloat(formData.heightCm) : null,
         depthCm: formData.depthCm ? parseFloat(formData.depthCm) : null,
         weightKg: formData.weightKg ? parseFloat(formData.weightKg) : null,
-        photoUrls: [],
+        photoUrls: photoUrls,
         documents: []
       };
 
