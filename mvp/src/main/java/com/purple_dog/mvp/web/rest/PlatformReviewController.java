@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/platform/reviews")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class PlatformReviewController {
 
     private final PlatformReviewService reviewService;

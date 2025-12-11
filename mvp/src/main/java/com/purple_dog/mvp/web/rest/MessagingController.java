@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/messaging")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class MessagingController {
 
     private final MessagingService messagingService;

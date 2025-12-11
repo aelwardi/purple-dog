@@ -22,7 +22,6 @@ import java.util.Map;
 @RequestMapping("/individuals")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class IndividualController {
 
     private final IndividualService individualService;

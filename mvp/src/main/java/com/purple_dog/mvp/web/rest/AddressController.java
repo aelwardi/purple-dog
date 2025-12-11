@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/addresses")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class AddressController {
 
     private final AddressService addressService;

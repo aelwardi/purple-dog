@@ -22,7 +22,6 @@ import java.util.List;
 @RequestMapping("/documents")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class DocumentController {
 
     private final DocumentService documentService;

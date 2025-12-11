@@ -22,7 +22,6 @@ import java.util.List;
 @RequestMapping("/invoices")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class InvoiceController {
 
     private final InvoiceService invoiceService;

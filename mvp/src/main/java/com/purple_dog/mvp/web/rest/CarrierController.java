@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/carriers")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class CarrierController {
 
     private final CarrierService carrierService;

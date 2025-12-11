@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/profile")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 @SecurityRequirement(name = "bearerAuth")
 public class ProfileController {
 

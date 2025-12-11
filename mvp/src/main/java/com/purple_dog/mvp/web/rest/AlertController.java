@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/alerts")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class AlertController {
 
     private final AlertService alertService;

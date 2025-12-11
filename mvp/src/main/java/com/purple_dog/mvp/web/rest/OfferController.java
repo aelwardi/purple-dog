@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/offers")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class OfferController {
 
     private final OfferService offerService;

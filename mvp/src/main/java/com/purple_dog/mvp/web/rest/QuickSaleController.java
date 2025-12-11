@@ -21,7 +21,6 @@ import java.util.List;
 @RequestMapping("/quick-sales")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class QuickSaleController {
 
     private final QuickSaleService quickSaleService;

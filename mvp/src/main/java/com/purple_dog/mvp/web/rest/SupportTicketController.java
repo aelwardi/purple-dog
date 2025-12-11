@@ -18,10 +18,9 @@ import java.util.List;
 
 @Tag(name = "Support Ticket Management", description = "APIs for managing support tickets")
 @RestController
-@RequestMapping("/support/tickets")
+@RequestMapping("/tickets")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class SupportTicketController {
 
     private final SupportTicketService ticketService;
