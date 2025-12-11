@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CreateShipmentDTO {
 
-    @NotNull(message = "Order ID is required")
+    // Optional: Either orderId OR toAddressId must be provided
     private Long orderId;
 
     @NotBlank(message = "From name is required")
@@ -41,6 +41,10 @@ public class CreateShipmentDTO {
     private String fromPhone;
     private String fromEmail;
 
+    // Option 1: Pass address ID (preferred)
+    private Long toAddressId;
+
+    // Option 2: Pass address fields directly
     private String toName;
     private String toStreet;
     private String toCity;

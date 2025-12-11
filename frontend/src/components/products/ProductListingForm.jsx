@@ -62,8 +62,8 @@ const ProductListingForm = ({ onSubmit, onCancel }) => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await categoryService.getActiveCategories();
-        setCategories(data);
+        const response = await categoryService.getActive();
+        setCategories(response.data || []);
       } catch (error) {
         console.error('Error loading categories:', error);
         showError('Erreur lors du chargement des catégories');

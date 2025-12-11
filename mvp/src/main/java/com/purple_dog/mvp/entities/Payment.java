@@ -21,7 +21,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "payment_intent_id", nullable = false, unique = true)
     private String stripePaymentIntentId;
 
     @Column(nullable = false, precision = 10, scale = 2)
@@ -49,8 +49,10 @@ public class Payment {
     @Column(length = 500)
     private String description;
 
+    @Column(name = "stripe_customer_id")
     private String stripeCustomerId;
 
+    @Column(name = "payment_method")
     private String paymentMethodId;
 
     @Column(length = 1000)

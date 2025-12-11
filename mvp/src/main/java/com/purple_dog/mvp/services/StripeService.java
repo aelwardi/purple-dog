@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -243,30 +244,42 @@ public class StripeService {
      * Get or create Stripe customer for a user
      */
     private StripeCustomer getOrCreateStripeCustomer(Person user) throws StripeException {
-        return stripeCustomerRepository.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    try {
-                        CustomerCreateParams params = CustomerCreateParams.builder()
-                                .setEmail(user.getEmail())
-                                .setName(user.getFirstName() + " " + user.getLastName())
-                                .putMetadata("userId", user.getId().toString())
-                                .build();
+        // First, try to find existing customer
+        Optional<StripeCustomer> existingCustomer = stripeCustomerRepository.findByUserId(user.getId());
+        if (existingCustomer.isPresent()) {
+            return existingCustomer.get();
+        }
 
-                        Customer stripeCustomer = Customer.create(params);
+        // Customer doesn't exist, create a new one
+        try {
+            CustomerCreateParams params = CustomerCreateParams.builder()
+                    .setEmail(user.getEmail())
+                    .setName(user.getFirstName() + " " + user.getLastName())
+                    .putMetadata("userId", user.getId().toString())
+                    .build();
 
-                        StripeCustomer customer = StripeCustomer.builder()
-                                .user(user)
-                                .stripeCustomerId(stripeCustomer.getId())
-                                .email(user.getEmail())
-                                .build();
+            Customer stripeCustomer = Customer.create(params);
 
-                        return stripeCustomerRepository.save(customer);
+            StripeCustomer customer = StripeCustomer.builder()
+                    .user(user)
+                    .stripeCustomerId(stripeCustomer.getId())
+                    .email(user.getEmail())
+                    .build();
 
-                    } catch (StripeException e) {
-                        log.error("Error creating Stripe customer: {}", e.getMessage(), e);
-                        throw new RuntimeException("Failed to create Stripe customer: " + e.getMessage());
-                    }
-                });
+            try {
+                return stripeCustomerRepository.save(customer);
+            } catch (Exception e) {
+                // Handle race condition: another thread might have created the customer
+                log.warn("Race condition detected while creating Stripe customer for user {}: {}", user.getId(), e.getMessage());
+                // Try to fetch it again
+                return stripeCustomerRepository.findByUserId(user.getId())
+                        .orElseThrow(() -> new RuntimeException("Failed to create or retrieve Stripe customer"));
+            }
+
+        } catch (StripeException e) {
+            log.error("Error creating Stripe customer: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create Stripe customer: " + e.getMessage());
+        }
     }
 
     /**

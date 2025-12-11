@@ -5,21 +5,18 @@ import {
     ShoppingBagIcon,
     ArrowLeftIcon,
     TruckIcon,
-    ShieldCheckIcon,
-    TagIcon
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import Badge from '../components/common/Badge';
+import CheckoutModal from '../components/checkout/CheckoutModal';
 
 const PanierPage = () => {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [promoCode, setPromoCode] = useState('');
-    const [appliedPromo, setAppliedPromo] = useState(null);
-    const [shippingMethod, setShippingMethod] = useState('standard');
+    const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
     useEffect(() => {
         loadCart();
@@ -46,42 +43,11 @@ const PanierPage = () => {
 
     // Calculer les totaux (pas de quantité, chaque item est unique)
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
-    const promoDiscount = appliedPromo ? subtotal * (appliedPromo.discount / 100) : 0;
-    const shippingCost = cartItems.length > 0 ? (shippingMethod === 'express' ? 25 : shippingMethod === 'standard' ? 15 : 0) : 0;
-    const total = subtotal - promoDiscount + shippingCost;
-
 
     const handleRemoveItem = (id) => {
         const updatedItems = cartItems.filter(item => item.id !== id);
         saveCart(updatedItems);
         toast.success('Produit retiré du panier');
-    };
-
-    const handleApplyPromo = () => {
-        if (!promoCode.trim()) {
-            toast.error('Veuillez saisir un code promo');
-            return;
-        }
-
-        const promoCodes = {
-            'BIENVENUE10': { discount: 10, description: '10% de réduction' },
-            'NOEL2024': { discount: 15, description: '15% de réduction' },
-            'PREMIUM20': { discount: 20, description: '20% de réduction' }
-        };
-
-        const promo = promoCodes[promoCode.toUpperCase()];
-        if (promo) {
-            setAppliedPromo(promo);
-            toast.success(`Code appliqué : ${promo.description}`);
-        } else {
-            toast.error('Code promo invalide');
-        }
-    };
-
-    const handleRemovePromo = () => {
-        setAppliedPromo(null);
-        setPromoCode('');
-        toast.success('Code promo retiré');
     };
 
     const handleCheckout = () => {
@@ -94,15 +60,18 @@ const PanierPage = () => {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) {
             toast.error('Vous devez être connecté pour passer commande');
-            // Rediriger vers la page de connexion avec retour vers le panier
             navigate('/login', { state: { from: '/panier' } });
             return;
         }
 
-        // Redirection vers la page de paiement
-        toast.success('Redirection vers le paiement...');
-        // TODO: Implémenter la page de checkout
-        console.log('Checkout data:', { cartItems, subtotal, total, shippingMethod });
+        // Ouvrir le modal de checkout
+        setShowCheckoutModal(true);
+    };
+
+    const handleOrderCreated = (orders) => {
+        console.log('✅ Commandes créées avec succès:', orders);
+        // Le modal de paiement reste ouvert
+        // Ne pas vider le panier ici - on le videra après paiement réussi
     };
 
     const formatPrice = (price) => {
@@ -231,109 +200,25 @@ const PanierPage = () => {
                                     ))}
                                 </div>
                             </Card>
-
-                            {/* Livraison */}
-                            <Card className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <TruckIcon className="w-5 h-5 text-purple-600" />
-                                    Livraison
-                                </h3>
-                                <div className="space-y-3">
-                                    {[
-                                        { value: 'standard', label: 'Standard', price: 15, delay: '5-7 jours' },
-                                        { value: 'express', label: 'Express', price: 25, delay: '2-3 jours' },
-                                        { value: 'pickup', label: 'Retrait', price: 0, delay: '24h' }
-                                    ].map((option) => (
-                                        <label
-                                            key={option.value}
-                                            className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="shipping"
-                                                value={option.value}
-                                                checked={shippingMethod === option.value}
-                                                onChange={(e) => setShippingMethod(e.target.value)}
-                                                className="mr-3"
-                                            />
-                                            <div className="flex-1">
-                                                <div className="flex justify-between">
-                                                    <span className="font-medium">{option.label}</span>
-                                                    <span className="text-purple-600 font-semibold">
-                                                        {option.price === 0 ? 'Gratuit' : formatPrice(option.price)}
-                                                    </span>
-                                                </div>
-                                                <p className="text-sm text-gray-500">{option.delay}</p>
-                                            </div>
-                                        </label>
-                                    ))}
-                                </div>
-                            </Card>
                         </div>
 
                         {/* Résumé */}
                         <div className="space-y-6">
-                            {/* Code promo */}
-                            <Card className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <TagIcon className="w-5 h-5 text-purple-600" />
-                                    Code promo
-                                </h3>
-                                {appliedPromo ? (
-                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="font-medium text-green-800">{appliedPromo.description}</p>
-                                            </div>
-                                            <button
-                                                onClick={handleRemovePromo}
-                                                className="text-green-600 hover:text-green-800"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            placeholder="Code promo"
-                                            className="flex-1 p-3 border rounded-lg"
-                                        />
-                                        <Button
-                                            variant="secondary"
-                                            onClick={handleApplyPromo}
-                                        >
-                                            Appliquer
-                                        </Button>
-                                    </div>
-                                )}
-                            </Card>
-
                             {/* Total */}
                             <Card className="p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Récapitulatif</h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-gray-600">
-                                        <span>Sous-total</span>
+                                        <span>Sous-total ({cartItems.length} produit{cartItems.length > 1 ? 's' : ''})</span>
                                         <span>{formatPrice(subtotal)}</span>
                                     </div>
-                                    {appliedPromo && (
-                                        <div className="flex justify-between text-green-600">
-                                            <span>Réduction</span>
-                                            <span>-{formatPrice(promoDiscount)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between text-gray-600">
-                                        <span>Livraison</span>
-                                        <span>{shippingCost === 0 ? 'Gratuit' : formatPrice(shippingCost)}</span>
-                                    </div>
+                                    <p className="text-xs text-gray-500 italic">
+                                        * Les frais de livraison seront calculés à l'étape suivante
+                                    </p>
                                     <div className="border-t pt-3">
                                         <div className="flex justify-between text-xl font-bold">
-                                            <span>Total</span>
-                                            <span>{formatPrice(total)}</span>
+                                            <span>Sous-total</span>
+                                            <span>{formatPrice(subtotal)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -362,6 +247,15 @@ const PanierPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Checkout Modal */}
+            <CheckoutModal
+                isOpen={showCheckoutModal}
+                onClose={() => setShowCheckoutModal(false)}
+                items={cartItems}
+                subtotal={subtotal}
+                onOrderCreated={handleOrderCreated}
+            />
         </div>
     );
 };
