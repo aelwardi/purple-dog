@@ -6,19 +6,16 @@ services:
     container_name: purple-dog-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-purple_dog_db}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # DEV uniquement : expose le port pour outils locaux (pgAdmin, etc.)
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-purple_dog_db}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,39 +23,39 @@ services:
       - purple-dog-network
 
   backend:
-    command: ["/bin/sh", "-c", "sleep infinity"] # temporaire, à remplacer par le vrai démarrage de l'app
     build:
       context: ./mvp
       dockerfile: Dockerfile
     image: purple-dog-backend:latest
     container_name: purple-dog-backend
-    restart: "no" # à la place de 'unless-stopped'
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      # application.properties lit ces 3 variables :
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-purple_dog_db}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Datasource (lus par application.properties)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
+      # Profil & serveur
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: 8080
-
-      # URLs (si ton code les utilise)
-      APP_URL: ${APP_URL:-http://localhost:3000}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
-
-      # Secrets (mettre dans .env)
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-ajowvlfocailnyjr}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_51ScpWHJj3NngK59lcowA058kF4yBU9azJcR1Z2ncmGyGwyOHrkrk0vLezbvUPnLcp2PlUXIaCdKJ4aaXxUlvjaoG00o6HPEzo9}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_51ScpWHJj3NngK59l7wCvqgVhuVTpITCXhKdrhOmyqTWCPz3MC5xPlwQHjR8JdKZD6RU1oZxfsI2s78vPx8NIfVVw00HeyjcLOj}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      SHIPPO_API_KEY: ${SHIPPO_API_KEY:-shippo_test_f39a8c01f20e356314157c1df37de8948883acb2}
-
-      INVOICE_STORAGE_PATH: /var/app/invoices
       TZ: Europe/Paris
 
+      # URLs (utilisées par ta Security/CORS)
+      APP_URL: ${APP_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+
+      # Secrets (définir via .env — éviter les overrides vides)
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SHIPPO_API_KEY: ${SHIPPO_API_KEY}
+
+      # Stockage factures
+      INVOICE_STORAGE_PATH: /var/app/invoices
     ports:
       - "8080:8080"
     networks:
@@ -67,7 +64,7 @@ services:
       - invoices:/var/app/invoices
       - uploads:/app/uploads
     healthcheck:
-      # ⚠️ Context-path: /api → health sous /api/actuator/health
+      # Context-path: /api → health sous /api/actuator/health
       test:
         [
           "CMD-SHELL",
@@ -76,6 +73,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: purple-dog-frontend:latest
+    container_name: purple-dog-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - purple-dog-network
 
 networks:
   purple-dog-network:
