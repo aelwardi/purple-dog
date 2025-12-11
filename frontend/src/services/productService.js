@@ -12,6 +12,27 @@ const productService = {
   },
 
   /**
+   * Update an existing product
+   * @param {number} productId
+   * @param {Object} productData
+   * @returns {Promise<Object>} Updated product
+   */
+  updateProduct: async (productId, productData) => {
+    const response = await api.put(`/products/${productId}`, productData);
+    return response.data;
+  },
+
+  /**
+   * Delete a product
+   * @param {number} productId
+   * @returns {Promise<Object>} Response
+   */
+  deleteProduct: async (productId) => {
+    const response = await api.delete(`/products/${productId}`);
+    return response.data;
+  },
+
+  /**
    * Get product by ID
    * @param {number} productId
    * @returns {Promise<Object>} Product details

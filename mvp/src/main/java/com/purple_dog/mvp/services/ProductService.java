@@ -52,7 +52,7 @@ public class ProductService {
         product.setHeightCm(request.getHeightCm());
         product.setDepthCm(request.getDepthCm());
         product.setWeightKg(request.getWeightKg());
-        product.setStatus(ProductStatus.PENDING_VALIDATION);
+        product.setStatus(ProductStatus.ACTIVE);
 
         // Photos
         int order = 0;
@@ -80,6 +80,74 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
         return toResponse(saved);
+    }
+
+    /**
+     * Met à jour un produit existant.
+     */
+    public ProductResponse updateProduct(Long id, ProductCreateRequest request) {
+        validateCreateRequest(request);
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductException("Product not found with id: " + id));
+
+        // Vérifier que le vendeur est le propriétaire du produit
+        if (!product.getSeller().getId().equals(request.getSellerId())) {
+            throw new ProductException("You are not authorized to update this product");
+        }
+
+        // Mettre à jour les champs
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ProductException("Category not found with id: " + request.getCategoryId()));
+
+        product.setCategory(category);
+        product.setTitle(request.getTitle());
+        product.setDescription(request.getDescription());
+        product.setProductCondition(request.getProductCondition());
+        product.setSaleType(request.getSaleType());
+        product.setEstimatedValue(request.getEstimatedValue());
+        product.setBrand(request.getBrand());
+        product.setYearOfManufacture(request.getYearOfManufacture());
+        product.setOrigin(request.getOrigin());
+        product.setAuthenticityCertificate(request.getAuthenticityCertificate());
+        product.setHasDocumentation(Boolean.TRUE.equals(request.getHasDocumentation()));
+        product.setWidthCm(request.getWidthCm());
+        product.setHeightCm(request.getHeightCm());
+        product.setDepthCm(request.getDepthCm());
+        product.setWeightKg(request.getWeightKg());
+
+        // Mise à jour des photos si nécessaire
+        if (request.getPhotoUrls() != null && !request.getPhotoUrls().isEmpty()) {
+            product.getPhotos().clear();
+            int order = 0;
+            for (String url : request.getPhotoUrls()) {
+                Photo photo = new Photo();
+                photo.setProduct(product);
+                photo.setUrl(url);
+                photo.setDisplayOrder(order++);
+                photo.setIsPrimary(order == 1);
+                product.getPhotos().add(photo);
+            }
+        }
+
+        Product saved = productRepository.save(product);
+        return toResponse(saved);
+    }
+
+    /**
+     * Supprime un produit.
+     */
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductException("Product not found with id: " + id));
+
+        // Ne pas supprimer si le produit est vendu
+        if (product.getStatus() == ProductStatus.SOLD) {
+            throw new ProductException("Cannot delete a sold product");
+        }
+
+        // Supprimer les photos et documents associés (cascade devrait gérer ça)
+        productRepository.delete(product);
     }
 
     /**
@@ -242,6 +310,21 @@ public class ProductService {
                         d.getUploadedAt()))
                 .collect(Collectors.toList());
 
+        // Seller info
+        ProductResponse.SellerInfo seller = new ProductResponse.SellerInfo(
+                product.getSeller().getId(),
+                product.getSeller().getFirstName(),
+                product.getSeller().getLastName(),
+                product.getSeller().getEmail()
+        );
+
+        // Category info
+        ProductResponse.CategoryInfo category = new ProductResponse.CategoryInfo(
+                product.getCategory().getId(),
+                product.getCategory().getName(),
+                product.getCategory().getDescription()
+        );
+
         return new ProductResponse(
                 product.getId(),
                 product.getSeller().getId(),
@@ -264,6 +347,9 @@ public class ProductService {
                 product.getCreatedAt(),
                 product.getUpdatedAt(),
                 photos,
-                docs);
+                docs,
+                seller,
+                category
+        );
     }
 }

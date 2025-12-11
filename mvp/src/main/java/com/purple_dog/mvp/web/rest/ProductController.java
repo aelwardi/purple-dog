@@ -34,6 +34,28 @@ public class ProductController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long id,
+            @RequestBody ProductCreateRequest request) {
+        try {
+            ProductResponse response = productService.updateProduct(id, request);
+            return ResponseEntity.ok(response);
+        } catch (ProductException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok("Product deleted successfully");
+        } catch (ProductException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getProduct(@PathVariable Long id) {
         try {

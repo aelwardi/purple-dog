@@ -43,8 +43,20 @@ public class PlatformReviewService {
             throw new DuplicateResourceException("User has already submitted a review");
         }
 
+        // Récupérer ou créer la plateforme par défaut
         Platform platform = platformRepository.findPlatformInstance()
-                .orElseThrow(() -> new ResourceNotFoundException("Platform not found"));
+                .orElseGet(() -> {
+                    log.info("No platform found, creating default platform");
+                    Platform newPlatform = Platform.builder()
+                            .name("Purple Dog")
+                            .description("Plateforme de vente d'objets d'occasion")
+                            .email("contact@purple-dog.com")
+                            .phone("+33 1 23 45 67 89")
+                            .address("France")
+                            .status(PlatformStatus.ACTIVE)
+                            .build();
+                    return platformRepository.save(newPlatform);
+                });
 
         PlatformReview review = PlatformReview.builder()
                 .platform(platform)

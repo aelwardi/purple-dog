@@ -26,6 +26,10 @@ import Input from '../components/common/Input';
 import ConfirmModal from '../components/common/ConfirmModal';
 import CreateTicketModal from '../components/support/CreateTicketModal';
 import ProductListingForm from '../components/products/ProductListingForm';
+import MyProducts from '../components/dashboard/MyProducts';
+import MyFavorites from '../components/dashboard/MyFavorites';
+import MyPurchases from '../components/dashboard/MyPurchases';
+import FeedbackModal from '../components/feedback/FeedbackModal';
 import supportTicketService from '../services/supportTicketService';
 import profileService from '../services/profileService';
 
@@ -60,6 +64,7 @@ const UnifiedDashboard = () => {
   const { showSuccess, showError, handleError } = useErrorHandler();
   const [activeTab, setActiveTab] = useState('overview');
   const [showListingForm, setShowListingForm] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // Support states
   const [tickets, setTickets] = useState([]);
@@ -226,7 +231,7 @@ const UnifiedDashboard = () => {
   };
 
   const handleFeedbackClick = () => {
-    navigate('/feedback');
+    setShowFeedbackModal(true);
   };
 
   const handleProductSubmit = (product) => {
@@ -494,42 +499,15 @@ const UnifiedDashboard = () => {
             )}
 
             {activeTab === 'myObjects' && (
-              <Card className="p-6">
-                <div className="text-center py-12">
-                  <ClipboardDocumentListIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-4">Vous n'avez pas encore d'objets en vente</p>
-                  <Button variant="primary" onClick={() => {
-                    setActiveTab('sell');
-                    setShowListingForm(true);
-                  }}>
-                    Vendre mon premier objet
-                  </Button>
-                </div>
-              </Card>
+              <MyProducts />
             )}
 
             {activeTab === 'favorites' && isProfessional && (
-              <Card className="p-6">
-                <div className="text-center py-12">
-                  <HeartIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-4">Vous n'avez pas encore de favoris</p>
-                  <Button variant="primary" onClick={() => setActiveTab('search')}>
-                    Explorer les objets
-                  </Button>
-                </div>
-              </Card>
+              <MyFavorites />
             )}
 
             {activeTab === 'purchases' && isProfessional && (
-              <Card className="p-6">
-                <div className="text-center py-12">
-                  <ShoppingBagIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-4">Vous n'avez pas encore effectué d'achats</p>
-                  <Button variant="primary" onClick={() => setActiveTab('search')}>
-                    Explorer les objets
-                  </Button>
-                </div>
-              </Card>
+              <MyPurchases />
             )}
 
             {/* Support Tab */}
@@ -1030,6 +1008,13 @@ const UnifiedDashboard = () => {
         confirmText="Oui, supprimer mon compte"
         variant="danger"
       />
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <FeedbackModal
+          onClose={() => setShowFeedbackModal(false)}
+        />
+      )}
 
       <ConfirmModal
         isOpen={showProfileUpdateConfirm}
