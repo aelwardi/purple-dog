@@ -85,4 +85,26 @@ public class AuthController {
         authService.logout();
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * Forgot password endpoint
+     * POST /api/auth/forgot-password
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponseDTO> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO request) {
+        log.info("Forgot password request for email: {}", request.getEmail());
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(new MessageResponseDTO("Un email de réinitialisation a été envoyé à votre adresse"));
+    }
+
+    /**
+     * Reset password endpoint
+     * POST /api/auth/reset-password
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponseDTO> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO request) {
+        log.info("Reset password request with token");
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(new MessageResponseDTO("Mot de passe réinitialisé avec succès"));
+    }
 }

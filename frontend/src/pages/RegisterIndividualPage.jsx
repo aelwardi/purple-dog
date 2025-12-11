@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserCircleIcon, EnvelopeIcon, MapPinIcon, LockClosedIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../hooks/useAuth';
 import { useErrorHandler } from '../hooks/useErrorHandler';
-import { authService } from '../services';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
 const RegisterIndividualPage = () => {
   const navigate = useNavigate();
+  const { registerIndividual, isAuthenticated } = useAuth();
   const { showSuccess, handleError } = useErrorHandler();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    address: '',
+    phone: '',
     password: '',
     confirmPassword: '',
+    bio: '',
     profilePicture: null,
     ageConfirmation: false,
     newsletter: false,
@@ -27,6 +35,7 @@ const RegisterIndividualPage = () => {
 
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,6 +43,9 @@ const RegisterIndividualPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -55,7 +67,7 @@ const RegisterIndividualPage = () => {
     if (!formData.lastName.trim()) newErrors.lastName = 'Le nom est requis';
     if (!formData.email.trim()) newErrors.email = 'L\'email est requis';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email invalide';
-    if (!formData.address.trim()) newErrors.address = 'L\'adresse est requise';
+    if (!formData.phone.trim()) newErrors.phone = 'Le téléphone est requis';
     if (formData.password.length < 8) newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
     if (!formData.ageConfirmation) newErrors.ageConfirmation = 'Vous devez confirmer avoir plus de 18 ans';
@@ -67,30 +79,32 @@ const RegisterIndividualPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
-      // Préparer les données pour l'API
       const registrationData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        address: formData.address,
-        newsletter: formData.newsletter,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        bio: formData.bio || null,
+        profilePicture: previewImage || null, // Base64 string
       };
 
-      await authService.registerIndividual(registrationData);
-      
-      showSuccess('Inscription réussie ! Vous pouvez maintenant vous connecter.');
-      navigate('/login');
+      await registerIndividual(registrationData);
+
+      showSuccess('Inscription réussie ! Bienvenue sur Purple Dog 🎉');
+
+      navigate('/dashboard?type=individual');
     } catch (error) {
-      handleError(error);
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.errors?.[0] ||
+                          'Une erreur est survenue lors de l\'inscription';
+      handleError(new Error(errorMessage));
     } finally {
       setIsSubmitting(false);
     }

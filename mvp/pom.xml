@@ -91,6 +91,21 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Stripe Payment Integration -->
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>31.0.0</version>
+		</dependency>
+
+
+		<!-- Shippo Shipping Integration -->
+		<dependency>
+			<groupId>com.goshippo</groupId>
+			<artifactId>shippo-java-client</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

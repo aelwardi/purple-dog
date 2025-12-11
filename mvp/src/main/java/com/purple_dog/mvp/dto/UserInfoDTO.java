@@ -23,5 +23,10 @@ public class UserInfoDTO {
     private String profilePicture;
     private Boolean emailVerified;
     private Boolean phoneVerified;
+    private String bio;
+
+    // Professional specific fields
+    private String companyName;
+    private String siret;
 }
 

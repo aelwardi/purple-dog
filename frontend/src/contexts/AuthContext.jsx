@@ -1,84 +1,144 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { authService } from '../services';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import authService from '../services/authService';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Charger l'utilisateur depuis localStorage au démarrage
+  /**
+   * Initialize auth state from localStorage
+   */
   useEffect(() => {
-    const loadUser = () => {
-      try {
-        const currentUser = authService.getCurrentUser();
-        if (currentUser.token) {
-          setUser({
-            token: currentUser.token,
-            userType: currentUser.userType,
-            userId: currentUser.userId,
-          });
+    const initAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      const storedUser = localStorage.getItem('user');
+
+      if (token && storedUser) {
+        try {
+          // Verify token is still valid by fetching user
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          // Token invalid, clear storage
+          console.error('Token validation failed:', error);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
         }
-      } catch (error) {
-        console.error('Error loading user:', error);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
-    loadUser();
+    initAuth();
   }, []);
 
-  const login = async (credentials) => {
-    const response = await authService.login(credentials);
-    const userData = {
-      token: response.token,
-      userType: response.userType,
-      userId: response.userId,
-    };
-    setUser(userData);
-    return response;
-  };
+  /**
+   * Login function
+   */
+  const login = useCallback(async (credentials) => {
+    try {
+      const response = await authService.login(credentials);
 
-  const logout = async () => {
+      // Store tokens and user info
+      localStorage.setItem('accessToken', response.accessToken);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      setUser(response.user);
+      setIsAuthenticated(true);
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Register individual function
+   */
+  const registerIndividual = useCallback(async (userData) => {
+    try {
+      const response = await authService.registerIndividual(userData);
+
+      // Store tokens and user info
+      localStorage.setItem('accessToken', response.accessToken);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      setUser(response.user);
+      setIsAuthenticated(true);
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Register professional function
+   */
+  const registerProfessional = useCallback(async (userData) => {
+    try {
+      const response = await authService.registerProfessional(userData);
+
+      // Store tokens and user info
+      localStorage.setItem('accessToken', response.accessToken);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      setUser(response.user);
+      setIsAuthenticated(true);
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Logout function
+   */
+  const logout = useCallback(async () => {
     try {
       await authService.logout();
     } finally {
       setUser(null);
-      authService.clearAuthToken();
+      setIsAuthenticated(false);
     }
-  };
+  }, []);
 
-  const register = async (userData, type = 'individual') => {
-    if (type === 'individual') {
-      return await authService.registerIndividual(userData);
-    } else {
-      return await authService.registerProfessional(userData);
-    }
-  };
-
-  const isAuthenticated = () => {
-    return !!user && !!user.token;
-  };
+  /**
+   * Update user info
+   */
+  const updateUser = useCallback((userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  }, []);
 
   const value = {
     user,
     loading,
-    login,
-    logout,
-    register,
     isAuthenticated,
+    login,
+    registerIndividual,
+    registerProfessional,
+    logout,
+    updateUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;
