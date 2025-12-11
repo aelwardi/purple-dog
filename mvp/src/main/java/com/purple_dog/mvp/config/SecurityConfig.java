@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/create-admin").permitAll()
                         .requestMatchers("/platform").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
@@ -47,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/payments/webhook").permitAll()
 
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/reviews/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/admin/**").hasRole("ADMIN")
@@ -84,4 +86,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-

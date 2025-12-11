@@ -36,4 +36,8 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     long countByRole(UserRole role);
 
     long countByAccountStatus(AccountStatus status);
+
+    long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
+
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

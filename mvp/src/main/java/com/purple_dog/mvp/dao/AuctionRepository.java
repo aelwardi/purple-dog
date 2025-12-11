@@ -54,4 +54,9 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     @Query("SELECT a FROM Auction a WHERE a.startDate >= :startDate AND a.startDate <= :endDate")
     List<Auction> findAuctionsByDateRange(@Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    /**
+     * Count auctions by status
+     */
+    long countByStatus(com.purple_dog.mvp.entities.AuctionStatus status);
 }

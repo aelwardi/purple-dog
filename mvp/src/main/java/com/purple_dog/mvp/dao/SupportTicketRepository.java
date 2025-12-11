@@ -47,5 +47,6 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, Lo
     List<SupportTicket> findByStatusAndUpdatedAtBefore(@Param("status") TicketStatus status, @Param("date") LocalDateTime date);
 
     boolean existsByTicketNumber(String ticketNumber);
-}
 
+    long countByStatus(TicketStatus status);
+}

@@ -33,7 +33,7 @@ apiClient.interceptors.request.use(
     config.metadata = { startTime };
 
     // Ajout du token d'authentification si disponible
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
