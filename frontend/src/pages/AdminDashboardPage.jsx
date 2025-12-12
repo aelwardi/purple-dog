@@ -62,11 +62,20 @@ const AdminDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 
+                className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors"
+                onClick={() => setActiveView('overview')}
+                title="Retour au tableau de bord"
+              >
                 Dashboard Administrateur
               </h1>
               <p className="mt-1 text-sm text-gray-500">
                 Bienvenue, {user?.firstName} {user?.lastName}
+                {activeView !== 'overview' && (
+                  <span className="ml-2 text-purple-600">
+                    → {activeView === 'categories' ? 'Gestion des catégories' : 'Gestion des produits'}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-4">
