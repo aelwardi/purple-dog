@@ -22,6 +22,8 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final PersonRepository personRepository;
     private final FavoriteRepository favoriteRepository;
+    private final QuickSaleRepository quickSaleRepository;
+    private final AuctionRepository auctionRepository;
 
     /**
      * Crée un produit et prépare les photos/documents.
@@ -79,6 +81,29 @@ public class ProductService {
         }
 
         Product saved = productRepository.save(product);
+
+        // Create QuickSale or Auction based on saleType
+        if (saved.getSaleType() == SaleType.QUICK_SALE) {
+            QuickSale quickSale = QuickSale.builder()
+                    .product(saved)
+                    .fixedPrice(saved.getEstimatedValue())
+                    .isAvailable(true)
+                    .build();
+            quickSaleRepository.save(quickSale);
+            saved.setQuickSale(quickSale);
+            productRepository.save(saved);
+        } else if (saved.getSaleType() == SaleType.AUCTION) {
+            // For auction, create Auction entity if needed
+            Auction auction = new Auction();
+            auction.setProduct(saved);
+            auction.setStartingPrice(saved.getEstimatedValue());
+            auction.setCurrentPrice(saved.getEstimatedValue());
+            auction.setStatus(AuctionStatus.ACTIVE);
+            auctionRepository.save(auction);
+            saved.setAuction(auction);
+            productRepository.save(saved);
+        }
+
         return toResponse(saved);
     }
 
@@ -325,6 +350,59 @@ public class ProductService {
                 product.getCategory().getDescription()
         );
 
+        // Determine price: prefer QuickSale.fixedPrice when available
+        java.math.BigDecimal responsePrice = product.getEstimatedValue();
+        ProductStatus responseStatus = product.getStatus();
+
+        Long quickSaleId = null;
+        Long auctionId = null;
+        AuctionResponse auctionDto = null; // DTO to include in product response
+
+        try {
+            QuickSale qs = product.getQuickSale();
+            if (qs != null) {
+                quickSaleId = qs.getId();
+                if (qs.getIsAvailable() != null && qs.getIsAvailable()) {
+                    responsePrice = qs.getFixedPrice();
+                } else if (qs.getIsAvailable() != null && !qs.getIsAvailable()) {
+                    // If quick sale exists but is not available, ensure product reported as SOLD
+                    responseStatus = ProductStatus.SOLD;
+                    // If there was a fixed price, still expose it as last price
+                    if (qs.getFixedPrice() != null) {
+                        responsePrice = qs.getFixedPrice();
+                    }
+                }
+            }
+
+            Auction auction = product.getAuction();
+            if (auction != null) {
+                auctionId = auction.getId();
+                // For auctions, price is currentPrice if available
+                if (auction.getCurrentPrice() != null) {
+                    responsePrice = auction.getCurrentPrice();
+                }
+                // Build AuctionResponse DTO for frontend use
+                auctionDto = new AuctionResponse(
+                        auction.getId(),
+                        product.getId(),
+                        auction.getReservePrice(),
+                        auction.getStartingPrice(),
+                        auction.getReservePrice(),
+                        auction.getCurrentPrice(),
+                        auction.getBidIncrement(),
+                        auction.getStartDate(),
+                        auction.getEndDate(),
+                        auction.getStatus(),
+                        auction.getReservePriceMet(),
+                        auction.getWinner() != null ? auction.getWinner().getId() : null,
+                        auction.getTotalBids()
+                );
+            }
+        } catch (Exception e) {
+            // In case lazy loading or other issue occurs, fallback silently
+            // log could be added here if desired
+        }
+
         return new ProductResponse(
                 product.getId(),
                 product.getSeller().getId(),
@@ -332,9 +410,10 @@ public class ProductService {
                 product.getTitle(),
                 product.getDescription(),
                 product.getProductCondition(),
-                product.getStatus(),
+                responseStatus,
                 product.getSaleType(),
-                product.getEstimatedValue(),
+                responsePrice, // price
+                product.getEstimatedValue(), // estimatedValue
                 product.getBrand(),
                 product.getYearOfManufacture(),
                 product.getOrigin(),
@@ -349,7 +428,10 @@ public class ProductService {
                 photos,
                 docs,
                 seller,
-                category
+                category,
+                quickSaleId,
+                auctionId,
+                auctionDto
         );
     }
 }

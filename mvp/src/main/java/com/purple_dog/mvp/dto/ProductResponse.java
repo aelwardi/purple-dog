@@ -23,6 +23,7 @@ public class ProductResponse {
     private ProductCondition productCondition;
     private ProductStatus status;
     private SaleType saleType;
+    private BigDecimal price;  // Prix du produit (alias pour estimatedValue pour compatibilité frontend)
     private BigDecimal estimatedValue;
     private String brand;
     private Integer yearOfManufacture;
@@ -39,6 +40,9 @@ public class ProductResponse {
     private List<DocumentResponseDTO> documents;
     private SellerInfo seller;
     private CategoryInfo category;
+    private Long quickSaleId;
+    private Long auctionId;
+    private AuctionResponse auction; // Add auction details object to carry starting/current price etc.
 
     @Data
     @NoArgsConstructor

@@ -12,8 +12,12 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
     Optional<Product> findById(Long id);
+    
+    Optional<Product> findByTitle(String title);
 
     List<Product> findAllBySellerId(Long sellerId);
 
     List<Product> findAllBySellerIdAndStatus(Long sellerId, ProductStatus status);
+
+    Long countByCategoryId(Long categoryId);
 }

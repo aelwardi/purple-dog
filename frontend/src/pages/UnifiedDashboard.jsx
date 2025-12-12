@@ -85,6 +85,16 @@ const UnifiedDashboard = () => {
   // Determine if user is professional
   const isProfessional = user?.role === 'PROFESSIONAL';
 
+  // Stats states
+  const [stats, setStats] = useState({
+    productsForSale: 0,
+    productsSold: 0,
+    productsBought: 0,
+    favorites: 0,
+    activeAuctions: 0,
+    messages: 0,
+  });
+
   // Profile form
   const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors }, reset: resetProfile } = useForm({
     resolver: zodResolver(profileSchema),
@@ -119,16 +129,53 @@ const UnifiedDashboard = () => {
     }
   }, [user, resetProfile]);
 
+  // Load stats when user changes
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Import productService dynamically
+        const productService = (await import('../services/productService')).default;
+        
+        // Get user's products
+        const products = await productService.getProductsBySeller(user.id);
+        
+        // Count products by status
+        const forSale = products.filter(p => 
+          p.status === 'AVAILABLE' || p.status === 'PENDING'
+        ).length;
+        
+        const sold = products.filter(p => p.status === 'SOLD').length;
+        
+        // TODO: Load other stats (favorites, purchases, auctions) when endpoints are ready
+        
+        setStats({
+          productsForSale: forSale,
+          productsSold: sold,
+          productsBought: 0, // TODO: implement
+          favorites: 0, // TODO: implement
+          activeAuctions: 0, // TODO: implement
+          messages: tickets.length,
+        });
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+
+    loadStats();
+  }, [user, tickets.length]);
+
   // Stats cards based on user type
   const statsCards = isProfessional ? [
-    { title: 'Objets en vente', value: '0', icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'purple' },
-    { title: 'Objets achetés', value: '0', icon: <ShoppingBagIcon className="w-6 h-6" />, color: 'green' },
-    { title: 'Favoris', value: '0', icon: <HeartIcon className="w-6 h-6" />, color: 'red' },
-    { title: 'Enchères actives', value: '0', icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'blue' },
+    { title: 'Objets en vente', value: stats.productsForSale.toString(), icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'purple' },
+    { title: 'Objets achetés', value: stats.productsBought.toString(), icon: <ShoppingBagIcon className="w-6 h-6" />, color: 'green' },
+    { title: 'Favoris', value: stats.favorites.toString(), icon: <HeartIcon className="w-6 h-6" />, color: 'red' },
+    { title: 'Enchères actives', value: stats.activeAuctions.toString(), icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'blue' },
   ] : [
-    { title: 'Objets en vente', value: '0', icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'purple' },
-    { title: 'Objets vendus', value: '0', icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'green' },
-    { title: 'Messages', value: '0', icon: <TicketIcon className="w-6 h-6" />, color: 'blue' },
+    { title: 'Objets en vente', value: stats.productsForSale.toString(), icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'purple' },
+    { title: 'Objets vendus', value: stats.productsSold.toString(), icon: <ClipboardDocumentListIcon className="w-6 h-6" />, color: 'green' },
+    { title: 'Messages', value: stats.messages.toString(), icon: <TicketIcon className="w-6 h-6" />, color: 'blue' },
   ];
 
   // Menu items based on user type
@@ -1033,4 +1080,3 @@ const UnifiedDashboard = () => {
 };
 
 export default UnifiedDashboard;
-

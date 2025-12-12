@@ -2,7 +2,7 @@ package com.purple_dog.mvp.web.rest;
 
 import com.purple_dog.mvp.dto.NotificationCreateDTO;
 import com.purple_dog.mvp.dto.NotificationResponseDTO;
-import com.purple_dog.mvp.services.NotificationService;
+import com.purple_dog.mvp.services.InAppNotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    private final InAppNotificationService inAppNotificationService;
 
     /**
      * Créer une notification
@@ -28,7 +28,7 @@ public class NotificationController {
     @PostMapping
     public ResponseEntity<NotificationResponseDTO> createNotification(@Valid @RequestBody NotificationCreateDTO dto) {
         log.info("Request to create notification for user: {}", dto.getUserId());
-        NotificationResponseDTO response = notificationService.createNotification(dto);
+        NotificationResponseDTO response = inAppNotificationService.createNotification(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -38,7 +38,7 @@ public class NotificationController {
     @GetMapping("/{notificationId}")
     public ResponseEntity<NotificationResponseDTO> getNotificationById(@PathVariable Long notificationId) {
         log.info("Request to get notification: {}", notificationId);
-        NotificationResponseDTO notification = notificationService.getNotificationById(notificationId);
+        NotificationResponseDTO notification = inAppNotificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(notification);
     }
 
@@ -48,7 +48,7 @@ public class NotificationController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NotificationResponseDTO>> getUserNotifications(@PathVariable Long userId) {
         log.info("Request to get notifications for user: {}", userId);
-        List<NotificationResponseDTO> notifications = notificationService.getUserNotifications(userId);
+        List<NotificationResponseDTO> notifications = inAppNotificationService.getUserNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
@@ -58,7 +58,7 @@ public class NotificationController {
     @GetMapping("/user/{userId}/unread")
     public ResponseEntity<List<NotificationResponseDTO>> getUnreadNotifications(@PathVariable Long userId) {
         log.info("Request to get unread notifications for user: {}", userId);
-        List<NotificationResponseDTO> notifications = notificationService.getUnreadNotifications(userId);
+        List<NotificationResponseDTO> notifications = inAppNotificationService.getUnreadNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
@@ -68,7 +68,7 @@ public class NotificationController {
     @GetMapping("/user/{userId}/recent")
     public ResponseEntity<List<NotificationResponseDTO>> getRecentNotifications(@PathVariable Long userId) {
         log.info("Request to get recent notifications for user: {}", userId);
-        List<NotificationResponseDTO> notifications = notificationService.getRecentNotifications(userId);
+        List<NotificationResponseDTO> notifications = inAppNotificationService.getRecentNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
@@ -78,7 +78,7 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponseDTO> markAsRead(@PathVariable Long notificationId) {
         log.info("Request to mark notification as read: {}", notificationId);
-        NotificationResponseDTO response = notificationService.markAsRead(notificationId);
+        NotificationResponseDTO response = inAppNotificationService.markAsRead(notificationId);
         return ResponseEntity.ok(response);
     }
 
@@ -88,7 +88,7 @@ public class NotificationController {
     @PatchMapping("/user/{userId}/read-all")
     public ResponseEntity<Integer> markAllAsRead(@PathVariable Long userId) {
         log.info("Request to mark all notifications as read for user: {}", userId);
-        int count = notificationService.markAllAsRead(userId);
+        int count = inAppNotificationService.markAllAsRead(userId);
         return ResponseEntity.ok(count);
     }
 
@@ -98,7 +98,7 @@ public class NotificationController {
     @GetMapping("/user/{userId}/count-unread")
     public ResponseEntity<Long> countUnreadNotifications(@PathVariable Long userId) {
         log.info("Request to count unread notifications for user: {}", userId);
-        long count = notificationService.countUnreadNotifications(userId);
+        long count = inAppNotificationService.countUnreadNotifications(userId);
         return ResponseEntity.ok(count);
     }
 
@@ -108,7 +108,7 @@ public class NotificationController {
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
         log.info("Request to delete notification: {}", notificationId);
-        notificationService.deleteNotification(notificationId);
+        inAppNotificationService.deleteNotification(notificationId);
         return ResponseEntity.noContent().build();
     }
 
@@ -118,7 +118,7 @@ public class NotificationController {
     @DeleteMapping("/user/{userId}/old")
     public ResponseEntity<Integer> deleteOldNotifications(@PathVariable Long userId) {
         log.info("Request to delete old notifications for user: {}", userId);
-        int count = notificationService.deleteOldNotifications(userId);
+        int count = inAppNotificationService.deleteOldNotifications(userId);
         return ResponseEntity.ok(count);
     }
 }

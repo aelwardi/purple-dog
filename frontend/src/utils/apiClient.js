@@ -33,9 +33,9 @@ apiClient.interceptors.request.use(
     config.metadata = { startTime };
 
     // Ajout du token d'authentification si disponible
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     // Log de la requête
@@ -93,7 +93,7 @@ apiClient.interceptors.response.use(
       // Ne pas rediriger si on est déjà sur la page de login
       if (currentPath !== '/login' && currentPath !== '/register') {
         // Nettoyer le localStorage
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('userType');
         localStorage.removeItem('userEmail');
         
@@ -268,10 +268,10 @@ export const authApi = {
  */
 export const setAuthToken = (token) => {
   if (token) {
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', token);
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     delete apiClient.defaults.headers.common['Authorization'];
   }
 };
@@ -279,17 +279,15 @@ export const setAuthToken = (token) => {
 /**
  * Récupération du token d'authentification
  */
-export const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+export const getAuthToken = () => localStorage.getItem('accessToken');
 
 /**
  * Suppression du token d'authentification
  */
 export const clearAuthToken = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userType');
-  localStorage.removeItem('userEmail');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('user');
+  localStorage.removeItem('refreshToken');
   delete apiClient.defaults.headers.common['Authorization'];
 };
 

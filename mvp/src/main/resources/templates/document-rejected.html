@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Document rejeté - [[${appName}]]</title>
+</head>
+<body>
+  <h3 th:text="${appName}">Purple Dog</h3>
+  <p>Bonjour <span th:text="${userName}">Utilisateur</span>,</p>
+  <p>Votre document <strong th:text="${documentType}">ID</strong> a été rejeté.</p>
+  <p>Raison: <span th:text="${reason}">...</span></p>
+</body>
+</html>
+

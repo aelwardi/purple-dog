@@ -29,6 +29,9 @@ public interface QuickSaleRepository extends JpaRepository<QuickSale, Long> {
     @Query("SELECT q FROM QuickSale q LEFT JOIN FETCH q.product p LEFT JOIN FETCH p.seller WHERE q.id = :id")
     Optional<QuickSale> findByIdWithDetails(@Param("id") Long id);
 
+    @Query("SELECT q FROM QuickSale q LEFT JOIN FETCH q.product p LEFT JOIN FETCH p.seller WHERE p.seller.id = :sellerId AND q.fixedPrice = :price AND q.isAvailable = true")
+    Optional<QuickSale> findAvailableBySellerAndPrice(@Param("sellerId") Long sellerId, @Param("price") java.math.BigDecimal price);
+
     @Query("SELECT COUNT(q) FROM QuickSale q WHERE q.product.seller.id = :sellerId")
     long countBySellerId(@Param("sellerId") Long sellerId);
 
@@ -37,4 +40,3 @@ public interface QuickSaleRepository extends JpaRepository<QuickSale, Long> {
 
     boolean existsByProductId(Long productId);
 }
-

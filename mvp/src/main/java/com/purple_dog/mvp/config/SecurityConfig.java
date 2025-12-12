@@ -48,10 +48,15 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/payments/webhook").permitAll()
 
+                        .requestMatchers("/upload/**").authenticated() // Upload nécessite authentification
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/reviews/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "USER")
 
                         .anyRequest().authenticated())

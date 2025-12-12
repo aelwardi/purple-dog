@@ -61,4 +61,41 @@ public class Auction {
 
     @OneToOne(mappedBy = "auction")
     private Order order;
+
+    @PrePersist
+    protected void onPrePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.startDate == null) {
+            this.startDate = now;
+        }
+        if (this.endDate == null) {
+            // Default duration: 7 days
+            this.endDate = this.startDate.plusDays(7);
+        }
+        if (this.startingPrice == null) {
+            if (this.reservePrice != null) {
+                this.startingPrice = this.reservePrice;
+            } else {
+                this.startingPrice = BigDecimal.ZERO;
+            }
+        }
+        if (this.currentPrice == null) {
+            this.currentPrice = this.startingPrice;
+        }
+        if (this.bidIncrement == null) {
+            this.bidIncrement = new BigDecimal("10.00");
+        }
+        if (this.totalBids == null) {
+            this.totalBids = 0;
+        }
+        if (this.isAutoExtendEnabled == null) {
+            this.isAutoExtendEnabled = true;
+        }
+        if (this.reservePriceMet == null) {
+            this.reservePriceMet = false;
+        }
+        if (this.status == null) {
+            this.status = AuctionStatus.ACTIVE;
+        }
+    }
 }

@@ -65,6 +65,16 @@ const productService = {
   },
 
   /**
+   * Search products (alias for searchProducts)
+   * @param {Object} searchParams
+   * @returns {Promise<Array>} List of products
+   */
+  search: async (searchParams) => {
+    const response = await api.get('/products/search', { params: searchParams });
+    return response.data;
+  },
+
+  /**
    * Add product to favorites
    * @param {number} userId
    * @param {number} productId

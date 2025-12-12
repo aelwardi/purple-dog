@@ -1,12 +1,10 @@
 package com.purple_dog.mvp.services;
 
-import com.purple_dog.mvp.dao.OrderRepository;
+import com.purple_dog.mvp.dao.*;
 import com.purple_dog.mvp.dto.OrderCreateDTO;
 import com.purple_dog.mvp.dto.OrderResponseDTO;
 import com.purple_dog.mvp.dto.OrderUpdateDTO;
 import com.purple_dog.mvp.entities.*;
-import com.purple_dog.mvp.dao.PersonRepository;
-import com.purple_dog.mvp.dao.AddressRepository;
 import com.purple_dog.mvp.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +26,11 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final PersonRepository personRepository;
     private final AddressRepository addressRepository;
+    private final NotificationService notificationService;
+    private final InAppNotificationService inAppNotificationService;
+    private final QuickSaleRepository quickSaleRepository;
+    private final AuctionRepository auctionRepository;
+    private final ProductRepository productRepository;
 
     public OrderResponseDTO createOrder(OrderCreateDTO dto) {
         log.debug("Creating order for buyer: {} and seller: {}", dto.getBuyerId(), dto.getSellerId());
@@ -48,6 +51,88 @@ public class OrderService {
         order.setOrderNumber(generateOrderNumber());
         order.setBuyer(buyer);
         order.setSeller(seller);
+        // Associate quickSale or auction if provided
+        if (dto.getQuickSaleId() != null) {
+            Long providedQsId = dto.getQuickSaleId();
+            QuickSale quickSale = quickSaleRepository.findByIdWithDetails(providedQsId).orElse(null);
+            if (quickSale == null) {
+                log.warn("QuickSale with id {} not found by id. Trying fallback: treat value as productId...", providedQsId);
+                // Fallback: maybe the client sent a productId by mistake
+                quickSale = quickSaleRepository.findByProductId(providedQsId).orElse(null);
+                if (quickSale != null) {
+                    log.info("Found QuickSale by productId fallback: quickSaleId={}, productId={}", quickSale.getId(), providedQsId);
+                }
+            }
+
+            if (quickSale == null) {
+                throw new ResourceNotFoundException("QuickSale not found with id or productId: " + providedQsId);
+            }
+
+            order.setQuickSale(quickSale);
+            // Reserve the quick sale immediately for this order
+            try {
+                quickSale.setIsAvailable(false);
+                quickSale.setSoldAt(null); // will be set upon payment
+                quickSaleRepository.save(quickSale);
+            } catch (Exception e) {
+                log.warn("Failed to reserve quickSale {}: {}", quickSale != null ? quickSale.getId() : null, e.getMessage());
+            }
+            log.debug("Associating quickSale id={} to order {}", quickSale.getId(), order.getOrderNumber());
+        } else if (dto.getProductId() != null) {
+            // If quickSaleId not provided, try to find a quick sale by productId
+            Long productId = dto.getProductId();
+            QuickSale quickSale = quickSaleRepository.findByProductId(productId).orElse(null);
+            if (quickSale != null) {
+                order.setQuickSale(quickSale);
+                try {
+                    quickSale.setIsAvailable(false);
+                    quickSaleRepository.save(quickSale);
+                } catch (Exception e) {
+                    log.warn("Failed to reserve quickSale {}: {}", quickSale != null ? quickSale.getId() : null, e.getMessage());
+                }
+                log.debug("Associated QuickSale (found by productId) id={} to order {}", quickSale.getId(), order.getOrderNumber());
+            } else {
+                log.debug("No QuickSale found for productId {} during order creation - attempting fallback: create or use product's quickSale", productId);
+                // Fallback: try to find product and create a quickSale if product.saleType==QUICK_SALE
+                try {
+                    var product = productRepository.findById(productId).orElse(null);
+                    if (product != null) {
+                        if (product.getQuickSale() != null) {
+                            order.setQuickSale(product.getQuickSale());
+                            try {
+                                product.getQuickSale().setIsAvailable(false);
+                                quickSaleRepository.save(product.getQuickSale());
+                            } catch (Exception e) {
+                                log.warn("Failed to reserve quickSale from product relation {}: {}", product.getQuickSale() != null ? product.getQuickSale().getId() : null, e.getMessage());
+                            }
+                            log.debug("Associated QuickSale from product relation id={} to order {}", product.getQuickSale().getId(), order.getOrderNumber());
+                        } else if (product.getSaleType() == SaleType.QUICK_SALE) {
+                            QuickSale newQs = new QuickSale();
+                            newQs.setProduct(product);
+                            newQs.setFixedPrice(product.getEstimatedValue());
+                            newQs.setIsAvailable(false); // immediately reserved for this order
+                            newQs.setCreatedAt(LocalDateTime.now());
+                            quickSaleRepository.save(newQs);
+                            order.setQuickSale(newQs);
+                            log.info("Created fallback QuickSale id={} for product {} and associated with order {}", newQs.getId(), productId, order.getOrderNumber());
+                        } else {
+                            log.debug("Product {} is not a QUICK_SALE, no quickSale created", productId);
+                        }
+                    } else {
+                        log.warn("Product {} not found during quickSale fallback", productId);
+                    }
+                } catch (Exception e) {
+                    log.warn("Exception during quickSale fallback for product {}: {}", productId, e.getMessage());
+                }
+            }
+        }
+        if (dto.getAuctionId() != null) {
+            Auction auction = auctionRepository.findById(dto.getAuctionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + dto.getAuctionId()));
+            order.setAuction(auction);
+            log.debug("Associating auction id={} to order {}", auction.getId(), order.getOrderNumber());
+        }
+
         order.setProductPrice(dto.getProductPrice());
         order.setShippingCost(dto.getShippingCost() != null ? dto.getShippingCost() : BigDecimal.ZERO);
         order.setPlatformFee(dto.getPlatformFee() != null ? dto.getPlatformFee() : BigDecimal.ZERO);
@@ -62,6 +147,21 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully with ID: {}", savedOrder.getId());
+
+        // Envoyer email de confirmation à l'acheteur et notification au vendeur
+        notificationService.sendOrderConfirmationEmail(savedOrder, buyer, seller);
+
+        // Créer une notification in-app pour le vendeur
+        try {
+            inAppNotificationService.createOrderNotification(
+                seller.getId(),
+                savedOrder.getOrderNumber(),
+                savedOrder.getTotalAmount().doubleValue()
+            );
+            log.info("✅ In-app notification sent to seller {}", seller.getId());
+        } catch (Exception e) {
+            log.error("❌ Failed to create order notification for seller: {}", e.getMessage());
+        }
 
         return mapToResponseDTO(savedOrder);
     }

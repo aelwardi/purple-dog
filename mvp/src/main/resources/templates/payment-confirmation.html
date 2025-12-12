@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirmation de paiement - [[${appName}]]</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background:#f7fafc; color:#111827; margin:0; padding:0; }
+    .container { max-width:600px; margin:28px auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 6px 18px rgba(16,24,40,0.06); }
+    .header { background:#6b21a8; color:#fff; padding:20px; text-align:center; }
+    .content { padding:24px; }
+    .footer { background:#f3f4f6; padding:16px; text-align:center; font-size:12px; color:#6b7280; }
+    .button { display:inline-block; padding:10px 16px; background:#7c3aed; color:#fff; border-radius:6px; text-decoration:none; }
+    .row { margin-bottom:12px; }
+    .label { color:#6b7280; font-size:13px; }
+    .value { font-weight:600; color:#111827; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 th:text="${appName}">Purple Dog</h1>
+      <div style="font-size:14px; opacity:0.95;">Confirmation de paiement</div>
+    </div>
+    <div class="content">
+      <p>Bonjour <span th:text="${userName}">Utilisateur</span>,</p>
+
+      <p>Nous confirmons que votre paiement a bien été reçu. Merci pour votre confiance.</p>
+
+      <div class="row">
+        <div class="label">Numéro de commande</div>
+        <div class="value" th:text="${orderNumber}">ORD-XXXX</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Montant</div>
+        <div class="value" th:text="${amount}">0,00 €</div>
+      </div>
+
+      <div class="row" th:if="${paymentDate != null}">
+        <div class="label">Date du paiement</div>
+        <div class="value" th:text="${paymentDate}">--</div>
+      </div>
+
+      <div class="row">
+        <div class="label">ID du paiement</div>
+        <div class="value" th:text="${paymentId}">#1234</div>
+      </div>
+
+      <div class="row" th:if="${paymentMethod != null}">
+        <div class="label">Méthode de paiement</div>
+        <div class="value" th:text="${paymentMethod}">Carte bancaire</div>
+      </div>
+
+      <p style="margin-top:16px;">
+        Vous pouvez consulter votre facture ou le détail de la commande en cliquant sur le bouton ci-dessous :
+      </p>
+
+      <p>
+        <a th:href="${invoiceUrl != null ? invoiceUrl : appUrl}" class="button">Voir la facture / commande</a>
+      </p>
+
+      <hr/>
+
+      <p>Si vous avez des questions, répondez simplement à cet email ou contactez le support via <a th:href="${appUrl}" th:text="${appUrl}">notre site</a>.</p>
+
+      <p>Bonne journée,<br/>L'équipe <span th:text="${appName}">Purple Dog</span></p>
+    </div>
+    <div class="footer">
+      <div th:text="'© ' + ${#dates.format(#dates.createNow(), 'yyyy')} + ' ' + ${appName}">© 2025 Purple Dog</div>
+    </div>
+  </div>
+</body>
+</html>
+

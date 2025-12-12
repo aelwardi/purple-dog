@@ -47,5 +47,18 @@ public class QuickSale {
 
     @OneToOne(mappedBy = "quickSale")
     private Order order;
-}
 
+    @PrePersist
+    protected void onPrePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.isAvailable == null) {
+            this.isAvailable = true;
+        }
+        if (this.acceptOffers == null) {
+            this.acceptOffers = Boolean.TRUE;
+        }
+    }
+
+}
