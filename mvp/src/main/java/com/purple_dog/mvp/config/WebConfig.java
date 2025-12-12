@@ -6,22 +6,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuration globale pour le Web MVC
- * Gère notamment la configuration CORS
+ * CORS est géré dans SecurityConfig pour éviter les conflits
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Override
+    // CORS est géré dans SecurityConfig.java
+    // Ne pas dupliquer la config ici pour éviter les conflits
+    
+    /* @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOriginPatterns(
-                    "http://localhost:5173",     // Frontend Vite dev server
-                    "http://localhost:3000",     // Alternative frontend port
-                    "http://localhost:4173"      // Vite preview
+                    "http://localhost:5173",
+                    "http://localhost:3000",
+                    "http://localhost:4173"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
+    */
 }
