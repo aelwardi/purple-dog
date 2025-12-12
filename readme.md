@@ -27,7 +27,53 @@ hackathon/
 
 ---
 
-## Quick Start
+## Quick Start with docker
+
+# Prérequis
+
+Docker
+
+Docker Compose
+
+Un fichier .env à la racine du projet
+
+# Variables d’environnement
+
+Créer un fichier .env à la racine avec les variables nécessaires:
+
+```
+# Database Configuration
+POSTGRES_DB=purple_dog_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+# Backend Configuration
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/purple_dog_db
+
+# Frontend Configuration (when ready)
+VITE_API_URL=http://localhost:8080/api
+
+# Backend Frontend URL (for CORS)
+FRONTEND_URL=http://localhost
+
+# Dev URLs
+APP_URL=http://localhost:3000
+
+STRIPE_SECRET_KEY=sk_test_51ScpWHJj3NngK59lcowA058kF4yBU9azJcR1Z2ncmGyGwyOHrkrk0vLezbvUPnLcp2PlUXIaCdKJ4aaXxUlvjaoG00o6HPEzo9
+STRIPE_PUBLISHABLE_KEY=pk_test_51ScpWHJj3NngK59l7wCvqgVhuVTpITCXhKdrhOmyqTWCPz3MC5xPlwQHjR8JdKZD6RU1oZxfsI2s78vPx8NIfVVw00HeyjcLOj
+STRIPE_WEBHOOK_SECRET=
+SHIPPO_API_KEY=shippo_test_f39a8c01f20e356314157c1df37de8948883acb2
+
+```
+# Lancement du projet 
+
+A la racine du projet lancer :
+
+```
+docker compose build
+docker compose up -d
+```
+## Quick Start (without docker)
 
 ### Open in IntelliJ IDEA
 
