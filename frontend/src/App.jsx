@@ -26,6 +26,8 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import PricingPage from './pages/PricingPage';
 import FeedbackPage from './pages/FeedbackPage';
 import UnifiedSupportPage from './pages/UnifiedSupportPage';
+import AuctionsPage from './pages/AuctionsPage';
+import AuctionDetailPage from './pages/AuctionDetailPage';
 
 function App() {
   return (
@@ -49,6 +51,9 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/pricing" element={<PricingPage />} />
+              {/* Auctions - Public pages */}
+              <Route path="/auctions" element={<AuctionsPage />} />
+              <Route path="/auctions/:id" element={<AuctionDetailPage />} />
             </Route>
             {/* Checkout and Payment routes - Protected */}
             <Route

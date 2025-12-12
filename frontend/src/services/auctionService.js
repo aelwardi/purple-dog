@@ -27,10 +27,10 @@ export const auctionService = {
   },
 
   /**
-   * Récupérer les enchères d'un produit
+   * Récupérer les enchères terminées
    */
-  getByProduct: async (productId) => {
-    return await api.get(`/auctions/product/${productId}`);
+  getClosed: async () => {
+    return await api.get('/auctions/closed');
   },
 
   /**
@@ -41,31 +41,31 @@ export const auctionService = {
   },
 
   /**
-   * Placer une offre
+   * Mettre à jour une enchère
    */
-  placeBid: async (auctionId, amount) => {
-    return await api.post(`/auctions/${auctionId}/bids`, { amount });
+  update: async (id, auctionData) => {
+    return await api.put(`/auctions/${id}`, auctionData);
   },
 
   /**
-   * Récupérer les offres d'une enchère
+   * Clôturer une enchère
    */
-  getBids: async (auctionId) => {
-    return await api.get(`/auctions/${auctionId}/bids`);
+  close: async (id) => {
+    return await api.put(`/auctions/${id}/close`);
   },
 
   /**
-   * Terminer une enchère
+   * Supprimer une enchère
    */
-  end: async (auctionId) => {
-    return await api.post(`/auctions/${auctionId}/end`);
+  delete: async (id) => {
+    return await api.delete(`/auctions/${id}`);
   },
 
   /**
-   * Annuler une enchère
+   * Vérifier si le prix de réserve est atteint
    */
-  cancel: async (auctionId, reason) => {
-    return await api.post(`/auctions/${auctionId}/cancel`, { reason });
+  isReserveMet: async (id) => {
+    return await api.get(`/auctions/${id}/reserve-met`);
   },
 };
 

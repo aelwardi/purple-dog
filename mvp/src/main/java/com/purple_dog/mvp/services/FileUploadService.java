@@ -64,8 +64,8 @@ public class FileUploadService {
                 continue;
             }
 
-            // Validate file size (max 5MB)
-            if (file.getSize() > 5 * 1024 * 1024) {
+            // Validate file size (max 10MB)
+            if (file.getSize() > 10 * 1024 * 1024) {
                 log.warn("File too large: {} bytes. Skipping.", file.getSize());
                 continue;
             }
@@ -163,4 +163,3 @@ public class FileUploadService {
         }
     }
 }
-

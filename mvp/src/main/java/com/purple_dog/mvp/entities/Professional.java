@@ -42,6 +42,13 @@ public class Professional extends Person {
     @JoinColumn(name = "plan_id")
     private Plan plan;
 
+    // Stripe Payment Method for bidding
+    @Column(name = "stripe_payment_method_id")
+    private String stripePaymentMethodId;
+
+    @Column(name = "has_payment_method")
+    private Boolean hasPaymentMethod = false;
+
     // Relations
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
@@ -51,5 +58,13 @@ public class Professional extends Person {
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     private List<Category> interests = new ArrayList<>();
-}
 
+    /**
+     * Check if the professional can bid in auctions
+     * Requires: hasPaymentMethod && accountStatus == ACTIVE
+     */
+    public boolean canBid() {
+        return Boolean.TRUE.equals(hasPaymentMethod) && 
+               AccountStatus.ACTIVE.equals(getAccountStatus());
+    }
+}
