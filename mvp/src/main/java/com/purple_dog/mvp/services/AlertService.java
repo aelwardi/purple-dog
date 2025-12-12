@@ -28,7 +28,7 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final PersonRepository personRepository;
-    private final NotificationService notificationService;
+    private final InAppNotificationService inAppNotificationService;
 
     /**
      * Créer une alerte
@@ -195,13 +195,19 @@ public class AlertService {
                 alert.setLastTriggeredAt(LocalDateTime.now());
                 alertRepository.save(alert);
 
+                // Créer une notification in-app
                 if (alert.getInAppNotification()) {
-                    notificationService.createAlertMatchNotification(
-                        alert.getUser().getId(),
-                        product.getId(),
-                        product.getTitle(),
-                        alert.getId()
-                    );
+                    try {
+                        inAppNotificationService.createAlertMatchNotification(
+                            alert.getUser().getId(),
+                            product.getId(),
+                            product.getTitle(),
+                            alert.getId()
+                        );
+                        log.info("✅ Alert match notification created for user {}", alert.getUser().getId());
+                    } catch (Exception e) {
+                        log.error("❌ Failed to create alert match notification: {}", e.getMessage());
+                    }
                 }
 
                 if (alert.getEmailNotification()) {

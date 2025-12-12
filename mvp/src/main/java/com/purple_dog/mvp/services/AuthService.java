@@ -38,6 +38,7 @@ public class AuthService {
     private final CustomUserDetailsService userDetailsService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailSenderService emailSenderService;
+    private final NotificationService notificationService;
 
     @Value("${jwt.expiration}")
     private long jwtExpirationMs;
@@ -106,6 +107,9 @@ public class AuthService {
         Person person = personRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found after registration"));
 
+        // Envoyer email de bienvenue
+        notificationService.sendWelcomeEmail(person);
+
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 request.getEmail(),
                 null,
@@ -143,6 +147,9 @@ public class AuthService {
 
         Person person = personRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found after registration"));
+
+        // Envoyer email de bienvenue
+        notificationService.sendWelcomeEmail(person);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 request.getEmail(),

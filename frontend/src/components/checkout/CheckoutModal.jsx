@@ -218,7 +218,6 @@ const CheckoutModal = ({ isOpen, onClose, items, subtotal, onOrderCreated }) => 
                 const orderData = {
                     buyerId: user.id,
                     sellerId: item.seller?.id || item.sellerId,
-                    quickSaleId: item.id,
                     productPrice: item.price,
                     shippingCost: shippingCost / items.length,
                     platformFee: (item.price * 0.05),
@@ -226,6 +225,17 @@ const CheckoutModal = ({ isOpen, onClose, items, subtotal, onOrderCreated }) => 
                     billingAddressId: selectedShippingAddress
                 };
 
+                // Include quickSaleId or auctionId only if provided on the cart item
+                if (item.quickSaleId) {
+                    orderData.quickSaleId = item.quickSaleId;
+                } else if (item.auctionId) {
+                    orderData.auctionId = item.auctionId;
+                } else if (item.productId) {
+                    // Fallback: send productId so backend can try to resolve a QuickSale by product
+                    orderData.productId = item.productId;
+                }
+
+                console.log('📤 Order payload:', orderData);
                 const response = await orderService.createOrder(orderData);
                 console.log('📦 Order créée, réponse:', response);
                 console.log('📦 response.data:', response.data);

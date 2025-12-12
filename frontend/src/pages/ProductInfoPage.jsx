@@ -122,7 +122,10 @@ const ProductInfoPage = () => {
                 image: product.photos?.[0]?.url || 'https://via.placeholder.com/400',
                 seller: product.seller,
                 condition: product.productCondition,
-                category: product.category?.name || 'Non catégorisé'
+                category: product.category?.name || 'Non catégorisé',
+                // Include quickSaleId / auctionId when provided by backend
+                quickSaleId: product.quickSale?.id || product.quickSaleId || null,
+                auctionId: product.auction?.id || product.auctionId || null
             });
 
             toast.success('Produit ajouté au panier ! 🛒');
@@ -145,15 +148,26 @@ const ProductInfoPage = () => {
     };
 
     const getStatusBadge = () => {
-        const statusConfig = {
-            AVAILABLE: { label: 'Disponible', variant: 'success' },
-            PENDING: { label: 'En attente', variant: 'warning' },
-            SOLD: { label: 'Vendu', variant: 'secondary' },
-            RESERVED: { label: 'Réservé', variant: 'info' }
-        };
+        const status = (product?.status || '').toString();
+        if (status === 'ACTIVE' || status === 'AVAILABLE') {
+            return <Badge variant="success">Disponible</Badge>;
+        }
+        if (status === 'SOLD') {
+            return <Badge variant="danger">Vendu</Badge>;
+        }
+        if (status === 'RESERVED') {
+            return <Badge variant="warning">Réservé</Badge>;
+        }
+        if (status === 'PENDING_VALIDATION' || status === 'PENDING') {
+            return <Badge variant="secondary">En attente</Badge>;
+        }
+        return null;
+    };
 
-        const config = statusConfig[product?.status] || statusConfig.AVAILABLE;
-        return <Badge variant={config.variant}>{config.label}</Badge>;
+    // helper to determine if add-to-cart or buy should be visible
+    const isAvailableForSale = () => {
+        const status = (product?.status || '').toString();
+        return (status === 'ACTIVE' || status === 'AVAILABLE') && product.saleType !== 'AUCTION';
     };
 
     const getProductImage = (index) => {
@@ -329,7 +343,7 @@ const ProductInfoPage = () => {
                                 {formatPrice(product.price || product.estimatedValue || 0)}
                             </div>
 
-                            {(product.status === 'AVAILABLE' || product.status === 'ACTIVE') && product.saleType !== 'AUCTION' && (
+                            {(product.status === 'ACTIVE' || product.status === 'AVAILABLE') && product.saleType !== 'AUCTION' && (
                                 <Button
                                     variant="primary"
                                     size="large"

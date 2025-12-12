@@ -1,381 +1,437 @@
 package com.purple_dog.mvp.services;
 
-import com.purple_dog.mvp.dao.NotificationRepository;
-import com.purple_dog.mvp.dao.PersonRepository;
-import com.purple_dog.mvp.dto.NotificationCreateDTO;
-import com.purple_dog.mvp.dto.NotificationResponseDTO;
-import com.purple_dog.mvp.entities.Notification;
-import com.purple_dog.mvp.entities.NotificationType;
+import com.purple_dog.mvp.entities.Order;
+import com.purple_dog.mvp.entities.Payment;
 import com.purple_dog.mvp.entities.Person;
-import com.purple_dog.mvp.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Service de notifications par email pour les événements importants
+ * - Inscription utilisateur
+ * - Création de commande
+ * - Paiement confirmé
+ * - Paiement échoué
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository;
-    private final PersonRepository personRepository;
+    private final EmailSenderService emailSenderService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     /**
-     * Créer une notification
+     * Envoyer un email de bienvenue lors de l'inscription
      */
-    public NotificationResponseDTO createNotification(NotificationCreateDTO dto) {
-        log.info("Creating notification for user: {}", dto.getUserId());
+    @Async
+    public void sendWelcomeEmail(Person user) {
+        try {
+            log.info("📧 Envoi email de bienvenue à: {}", user.getEmail());
 
-        Person user = personRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getUserId()));
+            String subject = "🎉 Bienvenue sur Purple Dog !";
 
-        Notification notification = Notification.builder()
-                .user(user)
-                .type(dto.getType())
-                .title(dto.getTitle())
-                .message(dto.getMessage())
-                .linkUrl(dto.getLinkUrl())
-                .isRead(false)
-                .emailSent(false)
-                .metadata(dto.getMetadata())
-                .createdAt(LocalDateTime.now())
-                .build();
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("firstName", user.getFirstName());
+            variables.put("lastName", user.getLastName());
+            variables.put("email", user.getEmail());
+            variables.put("role", getRoleName(user.getRole().name()));
 
-        notification = notificationRepository.save(notification);
-        log.info("Notification created successfully with id: {}", notification.getId());
+            // Essayer d'envoyer avec template HTML, sinon fallback sur email simple
+            try {
+                emailSenderService.sendHtmlEmail(
+                    user.getEmail(),
+                    subject,
+                    "welcome-email",
+                    variables
+                );
+            } catch (Exception e) {
+                log.warn("Template HTML non trouvé, envoi email simple");
+                sendSimpleWelcomeEmail(user, subject);
+            }
 
-        return mapToResponseDTO(notification);
-    }
-
-    /**
-     * Récupérer une notification par ID
-     */
-    public NotificationResponseDTO getNotificationById(Long notificationId) {
-        log.info("Fetching notification: {}", notificationId);
-
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
-
-        return mapToResponseDTO(notification);
-    }
-
-    /**
-     * Récupérer les notifications d'un utilisateur
-     */
-    public List<NotificationResponseDTO> getUserNotifications(Long userId) {
-        log.info("Fetching notifications for user: {}", userId);
-
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Récupérer les notifications non lues d'un utilisateur
-     */
-    public List<NotificationResponseDTO> getUnreadNotifications(Long userId) {
-        log.info("Fetching unread notifications for user: {}", userId);
-
-        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Récupérer les notifications récentes (dernières 24h)
-     */
-    public List<NotificationResponseDTO> getRecentNotifications(Long userId) {
-        log.info("Fetching recent notifications for user: {}", userId);
-
-        LocalDateTime since = LocalDateTime.now().minusDays(1);
-        return notificationRepository.findRecentByUserId(userId, since).stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Marquer une notification comme lue
-     */
-    public NotificationResponseDTO markAsRead(Long notificationId) {
-        log.info("Marking notification as read: {}", notificationId);
-
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
-
-        if (!notification.getIsRead()) {
-            notificationRepository.markAsRead(notificationId, LocalDateTime.now());
-            notification.setIsRead(true);
-            notification.setReadAt(LocalDateTime.now());
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email de bienvenue: {}", e.getMessage());
         }
-
-        log.info("Notification marked as read");
-        return mapToResponseDTO(notification);
     }
 
     /**
-     * Marquer toutes les notifications comme lues
+     * Envoyer un email simple de bienvenue (fallback)
      */
-    public int markAllAsRead(Long userId) {
-        log.info("Marking all notifications as read for user: {}", userId);
+    private void sendSimpleWelcomeEmail(Person user, String subject) {
+        String text = String.format("""
+            Bonjour %s %s,
+            
+            Bienvenue sur Purple Dog ! 🎉
+            
+            Votre compte %s a été créé avec succès.
+            Vous pouvez maintenant vous connecter et profiter de notre plateforme.
+            
+            Votre email de connexion : %s
+            
+            Si vous avez des questions, n'hésitez pas à nous contacter.
+            
+            Cordialement,
+            L'équipe Purple Dog
+            """,
+            user.getFirstName(),
+            user.getLastName(),
+            getRoleName(user.getRole().name()),
+            user.getEmail()
+        );
 
-        int count = notificationRepository.markAllAsReadByUserId(userId, LocalDateTime.now());
-        log.info("{} notifications marked as read", count);
-
-        return count;
+        emailSenderService.sendSimpleEmail(user.getEmail(), subject, text);
     }
 
     /**
-     * Compter les notifications non lues
+     * Envoyer un email de confirmation de commande
      */
-    public long countUnreadNotifications(Long userId) {
-        return notificationRepository.countUnreadByUserId(userId);
+    @Async
+    public void sendOrderConfirmationEmail(Order order, Person buyer, Person seller) {
+        try {
+            log.info("📧 Envoi email de confirmation de commande à: {}", buyer.getEmail());
+
+            String subject = "✅ Confirmation de votre commande #" + order.getOrderNumber();
+
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("orderNumber", order.getOrderNumber());
+            variables.put("buyerName", buyer.getFirstName() + " " + buyer.getLastName());
+            variables.put("sellerName", seller.getFirstName() + " " + seller.getLastName());
+            variables.put("productPrice", formatPrice(order.getProductPrice()));
+            variables.put("shippingCost", formatPrice(order.getShippingCost()));
+            variables.put("platformFee", formatPrice(order.getPlatformFee()));
+            variables.put("totalAmount", formatPrice(order.getTotalAmount()));
+            variables.put("orderDate", order.getCreatedAt().format(DATE_FORMATTER));
+            variables.put("status", getOrderStatusName(order.getStatus().name()));
+
+            try {
+                emailSenderService.sendHtmlEmail(
+                    buyer.getEmail(),
+                    subject,
+                    "order-confirmation",
+                    variables
+                );
+            } catch (Exception e) {
+                log.warn("Template HTML non trouvé, envoi email simple");
+                sendSimpleOrderConfirmationEmail(order, buyer, seller, subject);
+            }
+
+            // Notifier aussi le vendeur
+            sendOrderNotificationToSeller(order, seller, buyer);
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email de confirmation: {}", e.getMessage());
+        }
     }
 
     /**
-     * Supprimer une notification
+     * Envoyer un email simple de confirmation de commande (fallback)
      */
-    public void deleteNotification(Long notificationId) {
-        log.info("Deleting notification: {}", notificationId);
+    private void sendSimpleOrderConfirmationEmail(Order order, Person buyer, Person seller, String subject) {
+        String text = String.format("""
+            Bonjour %s %s,
+            
+            Votre commande a été créée avec succès ! ✅
+            
+            📦 DÉTAILS DE LA COMMANDE
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Numéro de commande : %s
+            Date : %s
+            Statut : %s
+            
+            💰 MONTANTS
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Prix du produit : %s
+            Frais de livraison : %s
+            Frais de plateforme : %s
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            TOTAL : %s
+            
+            👤 VENDEUR
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            %s %s
+            
+            Vous recevrez un email de confirmation une fois le paiement validé.
+            
+            Cordialement,
+            L'équipe Purple Dog
+            """,
+            buyer.getFirstName(),
+            buyer.getLastName(),
+            order.getOrderNumber(),
+            order.getCreatedAt().format(DATE_FORMATTER),
+            getOrderStatusName(order.getStatus().name()),
+            formatPrice(order.getProductPrice()),
+            formatPrice(order.getShippingCost()),
+            formatPrice(order.getPlatformFee()),
+            formatPrice(order.getTotalAmount()),
+            seller.getFirstName(),
+            seller.getLastName()
+        );
 
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
-
-        notificationRepository.delete(notification);
-        log.info("Notification deleted successfully");
+        emailSenderService.sendSimpleEmail(buyer.getEmail(), subject, text);
     }
 
     /**
-     * Supprimer les anciennes notifications (plus de 30 jours)
+     * Notifier le vendeur d'une nouvelle commande
      */
-    public int deleteOldNotifications(Long userId) {
-        log.info("Deleting old notifications for user: {}", userId);
+    @Async
+    public void sendOrderNotificationToSeller(Order order, Person seller, Person buyer) {
+        try {
+            log.info("📧 Notification vendeur pour commande: {}", order.getOrderNumber());
 
-        LocalDateTime before = LocalDateTime.now().minusDays(30);
-        int count = notificationRepository.deleteOldNotifications(userId, before);
+            String subject = "🛍️ Nouvelle commande #" + order.getOrderNumber();
 
-        log.info("{} old notifications deleted", count);
-        return count;
+            String text = String.format("""
+                Bonjour %s %s,
+                
+                Vous avez reçu une nouvelle commande ! 🎉
+                
+                📦 DÉTAILS DE LA COMMANDE
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                Numéro : %s
+                Date : %s
+                Montant : %s
+                
+                👤 ACHETEUR
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                %s %s
+                
+                Connectez-vous à votre espace vendeur pour gérer cette commande.
+                
+                Cordialement,
+                L'équipe Purple Dog
+                """,
+                seller.getFirstName(),
+                seller.getLastName(),
+                order.getOrderNumber(),
+                order.getCreatedAt().format(DATE_FORMATTER),
+                formatPrice(order.getTotalAmount()),
+                buyer.getFirstName(),
+                buyer.getLastName()
+            );
+
+            emailSenderService.sendSimpleEmail(seller.getEmail(), subject, text);
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de notification au vendeur: {}", e.getMessage());
+        }
     }
 
     /**
-     * Notification nouvelle enchère
+     * Envoyer un email de confirmation de paiement
      */
-    public void createBidNotification(Long userId, String productTitle, String bidderName, String amount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.BID_PLACED)
-                .title("Nouvelle enchère")
-                .message(String.format("%s a placé une enchère de %s € sur %s", bidderName, amount, productTitle))
-                .build();
+    @Async
+    public void sendPaymentConfirmationEmail(Payment payment, Person user, Order order) {
+        try {
+            log.info("📧 Envoi email de confirmation de paiement à: {}", user.getEmail());
 
-        createNotification(dto);
+            String subject = "✅ Paiement confirmé - Commande #" + order.getOrderNumber();
+
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("userName", user.getFirstName() + " " + user.getLastName());
+            variables.put("orderNumber", order.getOrderNumber());
+            variables.put("amount", formatPrice(payment.getAmount()));
+            variables.put("paymentDate", payment.getCreatedAt().format(DATE_FORMATTER));
+            variables.put("paymentId", payment.getId().toString());
+            variables.put("paymentMethod", "Carte bancaire");
+
+            try {
+                emailSenderService.sendHtmlEmail(
+                    user.getEmail(),
+                    subject,
+                    "payment-confirmation",
+                    variables
+                );
+            } catch (Exception e) {
+                log.warn("Template HTML non trouvé, envoi email simple");
+                sendSimplePaymentConfirmationEmail(payment, user, order, subject);
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email de confirmation de paiement: {}", e.getMessage());
+        }
     }
 
     /**
-     * Notification enchère dépassée
+     * Envoyer un email simple de confirmation de paiement (fallback)
      */
-    public void createOutbidNotification(Long userId, String productTitle, String amount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.BID_OUTBID)
-                .title("Vous avez été surenchéri")
-                .message(String.format("Votre enchère sur %s a été dépassée. Nouvelle enchère : %s €", productTitle, amount))
-                .build();
+    private void sendSimplePaymentConfirmationEmail(Payment payment, Person user, Order order, String subject) {
+        String text = String.format("""
+            Bonjour %s %s,
+            
+            Votre paiement a été confirmé avec succès ! ✅
+            
+            💳 DÉTAILS DU PAIEMENT
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Montant payé : %s
+            Date : %s
+            ID de paiement : #%s
+            Méthode : %s
+            
+            📦 COMMANDE ASSOCIÉE
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Numéro : %s
+            Montant total : %s
+            
+            Votre commande est maintenant en cours de traitement.
+            Vous recevrez un email dès que votre colis sera expédié.
+            
+            Merci de votre confiance !
+            
+            Cordialement,
+            L'équipe Purple Dog
+            """,
+            user.getFirstName(),
+            user.getLastName(),
+            formatPrice(payment.getAmount()),
+            payment.getCreatedAt().format(DATE_FORMATTER),
+            payment.getId(),
+            "Carte bancaire",
+            order.getOrderNumber(),
+            formatPrice(order.getTotalAmount())
+        );
 
-        createNotification(dto);
+        emailSenderService.sendSimpleEmail(user.getEmail(), subject, text);
     }
 
     /**
-     * Notification enchère gagnée
+     * Envoyer un email en cas d'échec de paiement
      */
-    public void createAuctionWonNotification(Long userId, String productTitle, String finalPrice) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.BID_WON)
-                .title("Félicitations ! Vous avez remporté l'enchère")
-                .message(String.format("Vous avez remporté l'enchère pour %s au prix de %s €", productTitle, finalPrice))
-                .build();
+    @Async
+    public void sendPaymentFailedEmail(Payment payment, Person user, Order order, String errorMessage) {
+        try {
+            log.info("📧 Envoi email d'échec de paiement à: {}", user.getEmail());
 
-        createNotification(dto);
+            String subject = "❌ Échec du paiement - Commande #" + order.getOrderNumber();
+
+            String text = String.format("""
+                Bonjour %s %s,
+                
+                Nous n'avons pas pu traiter votre paiement. ❌
+                
+                💳 DÉTAILS DU PAIEMENT
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                Montant : %s
+                Date de la tentative : %s
+                Raison : %s
+                
+                📦 COMMANDE
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                Numéro : %s
+                
+                🔄 PROCHAINES ÉTAPES
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                Veuillez :
+                1. Vérifier les informations de votre carte bancaire
+                2. Vous assurer d'avoir suffisamment de fonds
+                3. Réessayer le paiement depuis votre espace client
+                
+                Si le problème persiste, contactez notre service client.
+                
+                Cordialement,
+                L'équipe Purple Dog
+                """,
+                user.getFirstName(),
+                user.getLastName(),
+                formatPrice(payment.getAmount()),
+                payment.getCreatedAt().format(DATE_FORMATTER),
+                errorMessage != null ? errorMessage : "Erreur inconnue",
+                order.getOrderNumber()
+            );
+
+            emailSenderService.sendSimpleEmail(user.getEmail(), subject, text);
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email d'échec de paiement: {}", e.getMessage());
+        }
     }
 
     /**
-     * Notification offre reçue
+     * Envoyer un email de réinitialisation de mot de passe
      */
-    public void createOfferReceivedNotification(Long userId, String productTitle, String buyerName, String amount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.OFFER_RECEIVED)
-                .title("Nouvelle offre reçue")
-                .message(String.format("%s a fait une offre de %s € pour %s", buyerName, amount, productTitle))
-                .build();
+    @Async
+    public void sendPasswordResetEmail(Person user, String resetToken) {
+        try {
+            log.info("📧 Envoi email de réinitialisation de mot de passe à: {}", user.getEmail());
 
-        createNotification(dto);
+            String subject = "🔑 Réinitialisation de votre mot de passe";
+
+            String resetUrl = "http://localhost:5173/reset-password?token=" + resetToken;
+
+            String text = String.format("""
+                Bonjour %s %s,
+                
+                Vous avez demandé à réinitialiser votre mot de passe.
+                
+                Cliquez sur le lien ci-dessous pour créer un nouveau mot de passe :
+                
+                %s
+                
+                ⚠️ Ce lien expire dans 1 heure.
+                
+                Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+                Votre mot de passe actuel restera inchangé.
+                
+                Cordialement,
+                L'équipe Purple Dog
+                """,
+                user.getFirstName(),
+                user.getLastName(),
+                resetUrl
+            );
+
+            emailSenderService.sendSimpleEmail(user.getEmail(), subject, text);
+
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'envoi de l'email de réinitialisation: {}", e.getMessage());
+        }
+    }
+
+    // ========== MÉTHODES UTILITAIRES ==========
+
+    /**
+     * Formater un montant en devise
+     */
+    private String formatPrice(BigDecimal amount) {
+        if (amount == null) return "0,00 €";
+        return String.format("%,.2f €", amount);
     }
 
     /**
-     * Notification offre acceptée
+     * Obtenir le nom du rôle en français
      */
-    public void createOfferAcceptedNotification(Long userId, String productTitle, String amount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.OFFER_ACCEPTED)
-                .title("Votre offre a été acceptée !")
-                .message(String.format("Votre offre de %s € pour %s a été acceptée", amount, productTitle))
-                .build();
-
-        createNotification(dto);
+    private String getRoleName(String role) {
+        return switch (role) {
+            case "INDIVIDUAL" -> "Particulier";
+            case "PROFESSIONAL" -> "Professionnel";
+            case "ADMIN" -> "Administrateur";
+            default -> role;
+        };
     }
 
     /**
-     * Notification offre rejetée
+     * Obtenir le nom du statut de commande en français
      */
-    public void createOfferRejectedNotification(Long userId, String productTitle) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.OFFER_REJECTED)
-                .title("Offre refusée")
-                .message(String.format("Votre offre pour %s a été refusée", productTitle))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification commande créée
-     */
-    public void createOrderNotification(Long userId, String orderNumber, String totalAmount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.ORDER_CREATED)
-                .title("Commande confirmée")
-                .message(String.format("Votre commande %s d'un montant de %s € a été créée", orderNumber, totalAmount))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification paiement reçu
-     */
-    public void createPaymentReceivedNotification(Long userId, String orderNumber, String amount) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.PAYMENT_RECEIVED)
-                .title("Paiement reçu")
-                .message(String.format("Le paiement de %s € pour la commande %s a été reçu", amount, orderNumber))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification expédition
-     */
-    public void createShippingNotification(Long userId, String orderNumber, String trackingNumber) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.ITEM_SHIPPED)
-                .title("Votre colis a été expédié")
-                .message(String.format("Votre commande %s a été expédiée. Numéro de suivi : %s", orderNumber, trackingNumber))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification livraison
-     */
-    public void createDeliveryNotification(Long userId, String orderNumber) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.ITEM_DELIVERED)
-                .title("Colis livré")
-                .message(String.format("Votre commande %s a été livrée", orderNumber))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification nouveau message
-     */
-    public void createMessageNotification(Long userId, String senderName) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.MESSAGE_RECEIVED)
-                .title("Nouveau message")
-                .message(String.format("Vous avez reçu un message de %s", senderName))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification produit validé
-     */
-    public void createProductValidatedNotification(Long userId, String productTitle) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.PRODUCT_VALIDATED)
-                .title("Produit approuvé")
-                .message(String.format("Votre produit %s a été validé et est maintenant visible", productTitle))
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification correspondance alerte
-     */
-    public void createAlertMatchNotification(Long userId, Long productId, String productTitle, Long alertId) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.ALERT_MATCH)
-                .title("Nouvelle correspondance d'alerte")
-                .message(String.format("Un nouveau produit correspond à votre alerte : %s", productTitle))
-                .linkUrl("/products/" + productId)
-                .metadata("{\"alertId\":" + alertId + ",\"productId\":" + productId + "}")
-                .build();
-
-        createNotification(dto);
-    }
-
-    /**
-     * Notification réponse ticket
-     */
-    public void createTicketResponseNotification(Long userId, String ticketNumber) {
-        NotificationCreateDTO dto = NotificationCreateDTO.builder()
-                .userId(userId)
-                .type(NotificationType.TICKET_RESPONSE)
-                .title("Réponse à votre ticket")
-                .message(String.format("Une réponse a été apportée à votre ticket %s", ticketNumber))
-                .build();
-
-        createNotification(dto);
-    }
-
-    private NotificationResponseDTO mapToResponseDTO(Notification notification) {
-        return NotificationResponseDTO.builder()
-                .id(notification.getId())
-                .userId(notification.getUser().getId())
-                .type(notification.getType())
-                .title(notification.getTitle())
-                .message(notification.getMessage())
-                .linkUrl(notification.getLinkUrl())
-                .isRead(notification.getIsRead())
-                .readAt(notification.getReadAt())
-                .emailSent(notification.getEmailSent())
-                .emailSentAt(notification.getEmailSentAt())
-                .metadata(notification.getMetadata())
-                .createdAt(notification.getCreatedAt())
-                .build();
+    private String getOrderStatusName(String status) {
+        return switch (status) {
+            case "PENDING" -> "En attente";
+            case "PAYMENT_PENDING" -> "Paiement en attente";
+            case "PAID" -> "Payée";
+            case "PROCESSING" -> "En cours de traitement";
+            case "SHIPPED" -> "Expédiée";
+            case "DELIVERED" -> "Livrée";
+            case "COMPLETED" -> "Terminée";
+            case "CANCELLED" -> "Annulée";
+            default -> status;
+        };
     }
 }
 

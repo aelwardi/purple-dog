@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nouveau message - [[${appName}]]</title>
+</head>
+<body>
+  <h3 th:text="${appName}">Purple Dog</h3>
+  <p>Vous avez reçu un nouveau message de <strong th:text="${senderName}">Expéditeur</strong></p>
+  <p th:text="${messagePreview}">Aperçu du message...</p>
+</body>
+</html>
+
