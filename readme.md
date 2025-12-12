@@ -64,6 +64,10 @@ STRIPE_PUBLISHABLE_KEY=pk_test_51ScpWHJj3NngK59l7wCvqgVhuVTpITCXhKdrhOmyqTWCPz3M
 STRIPE_WEBHOOK_SECRET=
 SHIPPO_API_KEY=shippo_test_f39a8c01f20e356314157c1df37de8948883acb2
 
+GMAIL_APP_PASSWORD=xylnuzfgtzecqwlu
+GMAIL_APP_USERNAME=pdog83341@gmail.com
+GMAIL_USERNAME=pdog83341@gmail.com
+
 ```
 # Lancement du projet 
 
