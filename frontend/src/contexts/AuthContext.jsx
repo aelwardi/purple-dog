@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
+import { setAuthToken, clearAuthToken } from '../utils/apiClient';
 
 export const AuthContext = createContext(null);
 
@@ -18,6 +19,9 @@ export const AuthProvider = ({ children }) => {
 
       if (token && storedUser) {
         try {
+          // Ensure api client header is set
+          setAuthToken(token);
+
           // Verify token is still valid by fetching user
           const userData = await authService.getCurrentUser();
           setUser(userData);
@@ -25,8 +29,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           // Token invalid, clear storage
           console.error('Token validation failed:', error);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          clearAuthToken();
           localStorage.removeItem('user');
         }
       }
@@ -49,6 +52,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('refreshToken', response.refreshToken);
       }
       localStorage.setItem('user', JSON.stringify(response.user));
+
+      // Ensure api client header is set
+      setAuthToken(response.accessToken);
 
       setUser(response.user);
       setIsAuthenticated(true);
@@ -73,6 +79,9 @@ export const AuthProvider = ({ children }) => {
       }
       localStorage.setItem('user', JSON.stringify(response.user));
 
+      // Ensure api client header is set
+      setAuthToken(response.accessToken);
+
       setUser(response.user);
       setIsAuthenticated(true);
 
@@ -96,6 +105,9 @@ export const AuthProvider = ({ children }) => {
       }
       localStorage.setItem('user', JSON.stringify(response.user));
 
+      // Ensure api client header is set
+      setAuthToken(response.accessToken);
+
       setUser(response.user);
       setIsAuthenticated(true);
 
@@ -114,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setIsAuthenticated(false);
+      clearAuthToken();
     }
   }, []);
 

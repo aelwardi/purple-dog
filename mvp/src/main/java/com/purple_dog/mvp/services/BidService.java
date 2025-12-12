@@ -35,13 +35,16 @@ public class BidService {
      * > 5000€ → paliers de 500€
      */
     public BigDecimal calculateBidIncrement(BigDecimal currentPrice) {
-        if (currentPrice.compareTo(new BigDecimal("100")) < 0) {
+        // Defensive: treat null as zero to avoid NPEs
+        BigDecimal price = currentPrice != null ? currentPrice : BigDecimal.ZERO;
+
+        if (price.compareTo(new BigDecimal("100")) < 0) {
             return new BigDecimal("10");
-        } else if (currentPrice.compareTo(new BigDecimal("500")) < 0) {
+        } else if (price.compareTo(new BigDecimal("500")) < 0) {
             return new BigDecimal("50");
-        } else if (currentPrice.compareTo(new BigDecimal("1000")) < 0) {
+        } else if (price.compareTo(new BigDecimal("1000")) < 0) {
             return new BigDecimal("100");
-        } else if (currentPrice.compareTo(new BigDecimal("5000")) < 0) {
+        } else if (price.compareTo(new BigDecimal("5000")) < 0) {
             return new BigDecimal("200");
         } else {
             return new BigDecimal("500");
@@ -78,11 +81,16 @@ public class BidService {
             throw new BidException("Seller cannot bid on their own auction");
         }
 
-        BigDecimal currentPrice = auction.getCurrentPrice();
+        // Defensive: ensure currentPrice is not null to avoid BigDecimal NPEs
+        BigDecimal currentPrice = auction.getCurrentPrice() != null ? auction.getCurrentPrice() : BigDecimal.ZERO;
         BigDecimal minBidIncrement = calculateBidIncrement(currentPrice);
         BigDecimal minimumBid = currentPrice.add(minBidIncrement);
 
         // Vérifier que le montant respecte le palier minimum
+        if (request.getAmount() == null) {
+            throw new BidException("Amount is required");
+        }
+
         if (request.getAmount().compareTo(minimumBid) < 0) {
             throw new BidException(String.format(
                     "Bid amount must be at least %s (current price: %s + increment: %s)",
@@ -190,7 +198,7 @@ public class BidService {
 
         // Vérifier si le prix de réserve est atteint
         if (!auction.getReservePriceMet() &&
-                auction.getCurrentPrice().compareTo(auction.getReservePrice()) >= 0) {
+                auction.getCurrentPrice().compareTo(auction.getReservePrice() != null ? auction.getReservePrice() : BigDecimal.ZERO) >= 0) {
             auction.setReservePriceMet(true);
         }
 
@@ -245,7 +253,8 @@ public class BidService {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new BidException("Auction not found"));
 
-        BigDecimal currentPrice = auction.getCurrentPrice();
+        // Defensive: ensure current price is not null
+        BigDecimal currentPrice = auction.getCurrentPrice() != null ? auction.getCurrentPrice() : BigDecimal.ZERO;
         BigDecimal increment = calculateBidIncrement(currentPrice);
         return currentPrice.add(increment);
     }
