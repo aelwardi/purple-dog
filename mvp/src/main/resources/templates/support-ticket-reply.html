@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Réponse à votre ticket - [[${appName}]]</title>
+</head>
+<body>
+  <h3 th:text="${appName}">Purple Dog</h3>
+  <p>Bonjour,</p>
+  <p>Une réponse a été publiée pour votre ticket <strong th:text="${ticketNumber}">TKT-000</strong>.</p>
+  <p th:text="${replyMessage}">Message...</p>
+  <p>Merci.</p>
+</body>
+</html>
+

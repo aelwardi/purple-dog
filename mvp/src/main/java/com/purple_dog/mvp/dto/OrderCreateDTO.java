@@ -1,6 +1,5 @@
 package com.purple_dog.mvp.dto;
 
-import com.purple_dog.mvp.entities.OrderStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -25,6 +24,9 @@ public class OrderCreateDTO {
     private Long auctionId;
 
     private Long quickSaleId;
+
+    // Optional fallback when quickSaleId is not provided
+    private Long productId;
 
     @NotNull(message = "Product price is required")
     @Positive(message = "Product price must be positive")

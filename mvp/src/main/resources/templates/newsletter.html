@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Newsletter - [[${appName}]]</title>
+</head>
+<body>
+  <h3 th:text="${appName}">Purple Dog</h3>
+  <div th:utext="${content}">Contenu newsletter</div>
+</body>
+</html>
+

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Remboursement - [[${appName}]]</title>
+</head>
+<body>
+  <h3 th:text="${appName}">Purple Dog</h3>
+  <p>Le remboursement pour la commande <strong th:text="${orderNumber}">ORD-XXXX</strong> a été effectué.</p>
+  <p>Montant: <span th:text="${amount}">0,00 €</span></p>
+</body>
+</html>
+

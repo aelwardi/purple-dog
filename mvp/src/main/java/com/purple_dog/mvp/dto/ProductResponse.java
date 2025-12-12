@@ -40,6 +40,8 @@ public class ProductResponse {
     private List<DocumentResponseDTO> documents;
     private SellerInfo seller;
     private CategoryInfo category;
+    private Long quickSaleId;
+    private Long auctionId;
 
     @Data
     @NoArgsConstructor

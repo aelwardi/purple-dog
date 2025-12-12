@@ -33,6 +33,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.buyer.id = :personId OR o.seller.id = :personId")
     List<Order> findByPersonId(@Param("personId") Long personId);
 
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.quickSale LEFT JOIN FETCH o.auction WHERE o.id = :id")
+    Optional<Order> findByIdWithDetails(@Param("id") Long id);
+
     long countByStatus(OrderStatus status);
 
     long countByBuyerId(Long buyerId);

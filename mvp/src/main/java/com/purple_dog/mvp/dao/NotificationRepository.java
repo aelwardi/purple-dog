@@ -20,6 +20,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(Long userId, NotificationType type);
 
+    List<Notification> findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(Long userId, LocalDateTime createdAt);
+
+    List<Notification> findByUserIdAndCreatedAtBeforeOrderByCreatedAtDesc(Long userId, LocalDateTime createdAt);
+
+    long countByUserIdAndIsReadFalse(Long userId);
+
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.createdAt >= :since ORDER BY n.createdAt DESC")
     List<Notification> findRecentByUserId(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 
@@ -41,4 +47,3 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT n FROM Notification n WHERE n.emailSent = false AND n.user.email IS NOT NULL")
     List<Notification> findPendingEmailNotifications();
 }
-

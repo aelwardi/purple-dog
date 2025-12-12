@@ -28,7 +28,7 @@ public class PlatformReviewService {
     private final PlatformRepository platformRepository;
     private final PersonRepository personRepository;
     private final AdminRepository adminRepository;
-    private final NotificationService notificationService;
+    private final InAppNotificationService inAppNotificationService;
 
     /**
      * Créer un avis (Utilisateur authentifié)
@@ -72,18 +72,24 @@ public class PlatformReviewService {
         review = reviewRepository.save(review);
         log.info("Review created successfully with id: {} - Status: PENDING", review.getId());
 
+        // Créer une notification pour les admins
         try {
-            notificationService.createNotification(
-                NotificationCreateDTO.builder()
-                        .userId(1L) // ID admin système
+            // Récupérer le premier admin (ou tous les admins)
+            List<Admin> admins = adminRepository.findAll();
+            for (Admin admin : admins) {
+                NotificationCreateDTO notificationDTO = NotificationCreateDTO.builder()
+                        .userId(admin.getId())
                         .type(NotificationType.SYSTEM)
-                        .title("Nouvel avis en attente de modération")
-                        .message(String.format("Un nouvel avis a été soumis par %s",
-                                user.getFirstName() + " " + user.getLastName()))
-                        .build()
-            );
+                        .title("📝 Nouvel avis en attente de modération")
+                        .message(String.format("Un nouvel avis a été soumis par %s %s",
+                                user.getFirstName(), user.getLastName()))
+                        .linkUrl("/admin/reviews")
+                        .build();
+                inAppNotificationService.createNotification(notificationDTO);
+            }
+            log.info("✅ Admins notified about new review");
         } catch (Exception e) {
-            log.error("Failed to notify admins about new review: {}", e.getMessage());
+            log.error("❌ Failed to notify admins about new review: {}", e.getMessage());
         }
 
         return mapToResponseDTO(review);
@@ -174,23 +180,29 @@ public class PlatformReviewService {
         review = reviewRepository.save(review);
         log.info("Review {} moderated with status: {}", reviewId, dto.getStatus());
 
-
-        // Notifier l'utilisateur
+        // Créer une notification pour l'utilisateur
         try {
-            String message = dto.getStatus() == ReviewStatus.APPROVED
-                    ? "Votre avis sur Purple Dog a été approuvé et est maintenant visible"
-                    : "Votre avis sur Purple Dog n'a pas été approuvé";
+            String title = dto.getStatus() == ReviewStatus.APPROVED
+                    ? "✅ Votre avis a été approuvé"
+                    : "❌ Votre avis n'a pas été approuvé";
 
-            notificationService.createNotification(
-                NotificationCreateDTO.builder()
-                        .userId(review.getUser().getId())
-                        .type(NotificationType.SYSTEM)
-                        .title("Modération de votre avis")
-                        .message(message)
-                        .build()
-            );
+            String message = dto.getStatus() == ReviewStatus.APPROVED
+                    ? "Votre avis sur Purple Dog a été approuvé et est maintenant visible publiquement"
+                    : "Votre avis sur Purple Dog n'a pas été approuvé. " +
+                      (dto.getAdminResponse() != null ? "Raison : " + dto.getAdminResponse() : "");
+
+            NotificationCreateDTO notificationDTO = NotificationCreateDTO.builder()
+                    .userId(review.getUser().getId())
+                    .type(NotificationType.SYSTEM)
+                    .title(title)
+                    .message(message)
+                    .linkUrl("/feedback")
+                    .build();
+
+            inAppNotificationService.createNotification(notificationDTO);
+            log.info("✅ User {} notified about review moderation", review.getUser().getId());
         } catch (Exception e) {
-            log.error("Failed to notify user about review moderation: {}", e.getMessage());
+            log.error("❌ Failed to notify user about review moderation: {}", e.getMessage());
         }
 
         return mapToResponseDTO(review);

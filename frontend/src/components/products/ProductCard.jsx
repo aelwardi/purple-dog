@@ -47,18 +47,25 @@ const ProductCard = ({
   };
 
   const getStatusBadge = () => {
-    switch (product.status) {
-      case 'AVAILABLE':
-        return <Badge variant="success">Disponible</Badge>;
-      case 'SOLD':
-        return <Badge variant="danger">Vendu</Badge>;
-      case 'RESERVED':
-        return <Badge variant="warning">Réservé</Badge>;
-      case 'PENDING':
-        return <Badge variant="secondary">En attente</Badge>;
-      default:
-        return null;
+    // Support both backend enum values and legacy strings
+    const status = (product.status || '').toString();
+    if (status === 'ACTIVE' || status === 'AVAILABLE') {
+      return <Badge variant="success">Disponible</Badge>;
     }
+    if (status === 'SOLD') {
+      return <Badge variant="danger">Vendu</Badge>;
+    }
+    if (status === 'RESERVED') {
+      return <Badge variant="warning">Réservé</Badge>;
+    }
+    if (status === 'PENDING_VALIDATION' || status === 'PENDING') {
+      return <Badge variant="secondary">En attente</Badge>;
+    }
+    // Fallback for other statuses
+    if (status === 'DRAFT' || status === 'ARCHIVED' || status === 'REJECTED' || status === 'EXPIRED') {
+      return <Badge variant="muted">{status}</Badge>;
+    }
+    return null;
   };
 
   const getSaleTypeBadge = () => {
@@ -103,11 +110,14 @@ const ProductCard = ({
         id: Date.now(),
         productId: product.id,
         title: product.title,
-        price: product.price || product.estimatedValue || 0,
+        // price can come from different fields: quickSale.fixedPrice, product.price, estimatedValue
+        price: product.price || (product.quickSale && product.quickSale.fixedPrice) || product.estimatedValue || 0,
         image: getProductImage(),
         seller: product.seller,
         condition: product.productCondition,
-        category: product.category?.name || 'Non catégorisé'
+        category: product.category?.name || 'Non catégorisé',
+        quickSaleId: product.quickSale?.id || product.quickSaleId || null,
+        auctionId: product.auction?.id || product.auctionId || null
       });
 
       toast.success('Produit ajouté au panier ! 🛒');
@@ -324,4 +334,3 @@ const ProductCard = ({
 };
 
 export default ProductCard;
-
