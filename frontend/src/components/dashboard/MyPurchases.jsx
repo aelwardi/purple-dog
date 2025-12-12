@@ -28,7 +28,20 @@ const MyPurchases = () => {
     try {
       setLoading(true);
       const data = await orderService.getBuyerOrders(user.id);
-      setOrders(data);
+      console.debug('MyPurchases.loadOrders: raw response:', data);
+      // Handle common API shapes: array, { content: [...] }, { data: [...] }
+      if (data && Array.isArray(data.content)) {
+        setOrders(data.content);
+      } else if (data && Array.isArray(data.data)) {
+        setOrders(data.data);
+      } else if (Array.isArray(data)) {
+        setOrders(data);
+      } else if (data) {
+        // Some endpoints return a single object; coerce to array
+        setOrders([data]);
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       handleError(error);
     } finally {
@@ -36,9 +49,15 @@ const MyPurchases = () => {
     }
   };
 
+  // Defensive: always treat orders as an array
+  const ordersArray = Array.isArray(orders) ? orders : [];
   const filteredOrders = filter === 'ALL'
-    ? orders
-    : orders.filter(order => order.status === filter);
+    ? ordersArray
+    : ordersArray.filter(order => {
+        // order.status can be an object or string; normalize to string
+        const s = order?.status && typeof order.status === 'string' ? order.status : (order?.status?.name || '');
+        return s === filter;
+      });
 
   const getStatusConfig = (status) => {
     const configs = {
