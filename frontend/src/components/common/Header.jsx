@@ -237,11 +237,11 @@ const Header = () => {
                       <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
                     </div>
                     <Link
-                      to="/dashboard"
+                      to={user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
                       className="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      📊 Mon Dashboard
+                      📊 {user?.role === 'ADMIN' ? 'Dashboard Admin' : 'Mon Dashboard'}
                     </Link>
                     <Link
                       to="/profile"
@@ -362,11 +362,11 @@ const Header = () => {
                       </span>
                     </div>
                     <Link
-                      to="/dashboard"
+                      to={user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'}
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded"
                     >
-                      Mon Dashboard
+                      {user?.role === 'ADMIN' ? 'Dashboard Admin' : 'Mon Dashboard'}
                     </Link>
                     <Link
                       to="/profile"

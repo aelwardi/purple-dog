@@ -46,10 +46,15 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/payments/webhook").permitAll()
 
+                        .requestMatchers("/upload/**").authenticated()  // Upload nécessite authentification
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/admin/**").hasRole("ADMIN")
                         .requestMatchers("/platform/reviews/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN", "USER")
 
                         .anyRequest().authenticated()
@@ -62,7 +67,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000", "http://localhost:5173", "http://localhost:4173"));
+        configuration.setAllowedOriginPatterns(List.of(
+            "http://localhost:3000", 
+            "http://localhost:5173", 
+            "http://localhost:5174",  // Port alternatif Vite
+            "http://localhost:4173"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
@@ -84,4 +94,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-
