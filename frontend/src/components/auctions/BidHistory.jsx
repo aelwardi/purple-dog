@@ -1,4 +1,4 @@
-import { Trophy, TrendingUp } from 'lucide-react';
+import { Trophy, TrendingUp, Gavel } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
