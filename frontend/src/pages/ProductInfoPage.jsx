@@ -5,16 +5,10 @@ import {
     ShareIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    MapPinIcon,
     CalendarIcon,
-    EyeIcon,
     ShieldCheckIcon,
-    ChatBubbleLeftRightIcon,
     ExclamationTriangleIcon,
-    StarIcon,
-    ShoppingCartIcon,
-    HandRaisedIcon,
-    ClockIcon
+    ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
@@ -22,6 +16,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import productService from '../services/productService';
+import AuctionBidsPanel from '../components/products/AuctionBidsPanel';
 
 const ProductInfoPage = () => {
     const { id } = useParams();
@@ -50,8 +45,8 @@ const ProductInfoPage = () => {
 
                 setProduct(productData);
                 setIsFavorited(productData.isFavorited || false);
-            } catch (error) {
-                console.error('❌ Error loading product:', error);
+            } catch (err) {
+                console.error('❌ Error loading product:', err);
                 toast.error('Produit non trouvé');
                 navigate('/');
             } finally {
@@ -78,7 +73,7 @@ const ProductInfoPage = () => {
                 toast.success('Ajouté aux favoris');
             }
             setIsFavorited(!isFavorited);
-        } catch (error) {
+        } catch (e) {
             toast.error('Erreur lors de la mise à jour des favoris');
         }
     };
@@ -162,12 +157,6 @@ const ProductInfoPage = () => {
             return <Badge variant="secondary">En attente</Badge>;
         }
         return null;
-    };
-
-    // helper to determine if add-to-cart or buy should be visible
-    const isAvailableForSale = () => {
-        const status = (product?.status || '').toString();
-        return (status === 'ACTIVE' || status === 'AVAILABLE') && product.saleType !== 'AUCTION';
     };
 
     const getProductImage = (index) => {
@@ -382,6 +371,11 @@ const ProductInfoPage = () => {
                                     </div>
                                 </div>
                             </Card>
+                        )}
+
+                        {/* Enchères */}
+                        {product.saleType === 'AUCTION' && (product.auction?.id || product.auctionId) && (
+                            <AuctionBidsPanel auctionId={product.auction?.id || product.auctionId} auction={product.auction} />
                         )}
 
                         {/* Garanties */}

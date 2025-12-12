@@ -356,6 +356,7 @@ public class ProductService {
 
         Long quickSaleId = null;
         Long auctionId = null;
+        AuctionResponse auctionDto = null; // DTO to include in product response
 
         try {
             QuickSale qs = product.getQuickSale();
@@ -380,9 +381,26 @@ public class ProductService {
                 if (auction.getCurrentPrice() != null) {
                     responsePrice = auction.getCurrentPrice();
                 }
+                // Build AuctionResponse DTO for frontend use
+                auctionDto = new AuctionResponse(
+                        auction.getId(),
+                        product.getId(),
+                        auction.getReservePrice(),
+                        auction.getStartingPrice(),
+                        auction.getReservePrice(),
+                        auction.getCurrentPrice(),
+                        auction.getBidIncrement(),
+                        auction.getStartDate(),
+                        auction.getEndDate(),
+                        auction.getStatus(),
+                        auction.getReservePriceMet(),
+                        auction.getWinner() != null ? auction.getWinner().getId() : null,
+                        auction.getTotalBids()
+                );
             }
         } catch (Exception e) {
             // In case lazy loading or other issue occurs, fallback silently
+            // log could be added here if desired
         }
 
         return new ProductResponse(
@@ -412,7 +430,8 @@ public class ProductService {
                 seller,
                 category,
                 quickSaleId,
-                auctionId
+                auctionId,
+                auctionDto
         );
     }
 }

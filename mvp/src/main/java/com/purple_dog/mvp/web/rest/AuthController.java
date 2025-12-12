@@ -75,6 +75,18 @@ public class AuthController {
     }
 
     /**
+     * Debug endpoint to return the current principal name (or anonymous)
+     * GET /api/auth/debug
+     */
+    @GetMapping("/debug")
+    public ResponseEntity<String> debugPrincipal(java.security.Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.ok("anonymous");
+        }
+        return ResponseEntity.ok(principal.getName());
+    }
+
+    /**
      * Logout endpoint
      * POST /api/auth/logout
      */

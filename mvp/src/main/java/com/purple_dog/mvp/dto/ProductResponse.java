@@ -42,6 +42,7 @@ public class ProductResponse {
     private CategoryInfo category;
     private Long quickSaleId;
     private Long auctionId;
+    private AuctionResponse auction; // Add auction details object to carry starting/current price etc.
 
     @Data
     @NoArgsConstructor
